@@ -1,6 +1,7 @@
 #include <zephyr.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "util_worker.h"
 #include "cmsis_os2.h"
 
@@ -9,8 +10,6 @@
 
 #define MAX_WORK_COUNT 32
 #define WARN_WORK_PROC_TIME_MS 1000
-
-#define MAX_WORK_NAME_LEN 32
 
 K_THREAD_STACK_DEFINE(worker_stack_area, WORKER_STACK_SIZE);
 static struct k_work_q worker_work_q;
@@ -32,24 +31,20 @@ typedef struct {
 
 static void work_handler(struct k_work *item) {
   work_info *work_job = CONTAINER_OF(item, work_info, work);
-  uint32_t fn_start_time, fn_finish_time;
+  uint64_t fn_start_time, fn_finish_time;
 
-  fn_start_time = k_uptime_get_32();
-  work_job->fn(work_job->ptr_arg, work_job->ui32_arg);
-  fn_finish_time = k_uptime_get_32();
-
-  /* Processing time too long, print warning message */
-  if (fn_finish_time > fn_start_time) {
-    if ((fn_finish_time - fn_start_time) > WARN_WORK_PROC_TIME_MS) {
-      printk("WARN: work %s Processing time too long, %d ms\n", work_job->name, (fn_finish_time - fn_start_time));
-    }
+  if (work_job->fn == NULL) {
+    printk("work_handler function is null\n");
   } else {
-    if ((0x100000000 + fn_finish_time - fn_start_time ) > WARN_WORK_PROC_TIME_MS) {
-      printk("WARN: work %s Processing time too long, %lld ms\n", 
-             work_job->name, (0x100000000 + fn_finish_time - fn_start_time));
+    fn_start_time = k_uptime_get();
+    work_job->fn(work_job->ptr_arg, work_job->ui32_arg);
+    fn_finish_time = k_uptime_get();
+
+    /* Processing time too long, print warning message */
+    if ((fn_finish_time - fn_start_time) > WARN_WORK_PROC_TIME_MS) {
+      printk("WARN: work %s Processing time too long, %lld ms\n", work_job->name, (fn_finish_time - fn_start_time));
     }
   }
-  
   if (k_mutex_lock(&mutex_use_count, K_MSEC(1000))) {
     printk("work_handler mutex lock fail\n");
     free(work_job);
@@ -90,7 +85,7 @@ int add_work(worker_job job) {
   new_job->ptr_arg = job.ptr_arg;
   new_job->ui32_arg = job.ui32_arg;
   if (job.name != NULL) {
-    strncpy(new_job->name, job.name, MAX_WORK_NAME_LEN);
+    snprintf(new_job->name, sizeof(new_job->name), "%s", job.name);
   }
 
   if (k_mutex_lock(&mutex_use_count, K_MSEC(1000))) {
