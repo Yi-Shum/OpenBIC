@@ -53,6 +53,8 @@ enum {
   SNR_INIT_STATUS,
   SNR_UNSPECIFIED_ERROR,
   SNR_POLLING_DISABLE,
+  SNR_PRE_READ_ERROR,
+  SNR_POST_READ_ERROR
 };
 
 typedef struct _sen_val {

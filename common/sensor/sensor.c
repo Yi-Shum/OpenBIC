@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "cmsis_os2.h"
 #include "sdr.h"
 #include "pal.h"
@@ -104,18 +105,20 @@ bool sensor_read(uint8_t sensor_num, int *reading) {
   return false;
 }
 
-uint8_t cal_mbr(uint8_t snr_num, int *reading)
+static bool cal_mbr(uint8_t snr_num, int *reading)
 {
+  if (!reading || (SnrNum_SDR_map[snr_num] == 0xFF))
+    return false;
+
   /* TODO: handle fraction */
   sen_val *sval = (sen_val *)reading;
   int cache = cal_MBR(snr_num, sval->integer) & 0xff;
   sensor_config[SnrNum_SnrCfg_map[snr_num]].cache = cache;
   sensor_config[SnrNum_SnrCfg_map[snr_num]].cache_status = SNR_READ_SUCCESS;
+  return true;
 }
 
 uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) {
-  int status;
-
   if(SnrNum_SDR_map[sensor_num] == 0xFF) { // look for sensor in SDR table
     return SNR_NOT_FOUND;
   }
@@ -126,8 +129,12 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
 
   snr_cfg *cfg = &sensor_config[SnrNum_SnrCfg_map[sensor_num]];
   if (read_mode == get_from_sensor) {
-    if (cfg->pre_sen_read_hook)
-      cfg->pre_sen_read_hook(sensor_num, cfg->pre_sen_read_args);
+    if (cfg->pre_sen_read_hook) {
+      if (cfg->pre_sen_read_hook(sensor_num, cfg->pre_sen_read_args) == false) {
+        printf("sen %d pre sensor read failed!\n", sensor_num);
+        return SNR_PRE_READ_ERROR;
+      }
+    }
     
     if (cfg->sen_read)
       cfg->cache_status = cfg->sen_read(sensor_num, reading);
@@ -136,8 +143,14 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
       if( !access_check(sensor_num) ) { // double check access to avoid not accessible read at same moment status change
         return SNR_NOT_ACCESSIBLE;
       }
-      if (cfg->post_sen_read_hook)
-        cfg->post_sen_read_hook(sensor_num, cfg->post_sen_read_args);
+
+      if (cfg->post_sen_read_hook) {
+        if (cfg->post_sen_read_hook(sensor_num, cfg->post_sen_read_args) == false) {
+          printf("sen %d post sensor read failed!\n", sensor_num);
+          cfg->cache_status = SNR_POST_READ_ERROR;
+          return SNR_POST_READ_ERROR;
+        }
+      }
       cal_mbr(sensor_num, reading);
 
       return cfg->cache_status;
@@ -215,7 +228,7 @@ bool sensor_init(void) {
   SDR_init();
 
   if( SDR_NUM != 0) {
-    sensor_config = malloc(SDR_NUM * sizeof(snr_cfg));
+    sensor_config = (snr_cfg *)malloc(SDR_NUM * sizeof(snr_cfg));
     if(sensor_config != NULL) {
       pal_load_snr_config();
     } else {
