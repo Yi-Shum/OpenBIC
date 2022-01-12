@@ -112,7 +112,11 @@ static bool cal_mbr(uint8_t snr_num, int *reading)
 
   /* TODO: handle fraction */
   sen_val *sval = (sen_val *)reading;
-  int cache = cal_MBR(snr_num, sval->integer) & 0xff;
+  float f = sval->integer + (float)sval->fraction / 1000;
+  
+  int cache = (int)(f * SDR_Rexp(snr_num) / SDR_M(snr_num));
+
+  // int cache = cal_MBR(snr_num, sval->integer) & 0xff;
   sensor_config[SnrNum_SnrCfg_map[snr_num]].cache = cache;
   sensor_config[SnrNum_SnrCfg_map[snr_num]].cache_status = SNR_READ_SUCCESS;
   return true;
