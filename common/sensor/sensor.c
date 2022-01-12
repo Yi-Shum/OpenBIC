@@ -58,10 +58,10 @@ bool access_check(uint8_t sensor_num) {
 }
 
 bool sensor_read(uint8_t sensor_num, int *reading) {
-  bool status;
+  int status;
   switch(sensor_config[SnrNum_SnrCfg_map[sensor_num]].type){
     case type_tmp75:
-      status = pal_tmp75_read(sensor_num, reading);
+      status = tmp75_read(sensor_num, reading);
       if (status)
         return true;
       break;
@@ -104,8 +104,17 @@ bool sensor_read(uint8_t sensor_num, int *reading) {
   return false;
 }
 
+uint8_t cal_mbr(uint8_t snr_num, int *reading)
+{
+  /* TODO: handle fraction */
+  sen_val *sval = (sen_val *)reading;
+  int cache = cal_MBR(snr_num, sval->integer) & 0xff;
+  sensor_config[SnrNum_SnrCfg_map[snr_num]].cache = cache;
+  sensor_config[SnrNum_SnrCfg_map[snr_num]].cache_status = SNR_READ_SUCCESS;
+}
+
 uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) {
-  uint8_t status;
+  int status;
 
   if(SnrNum_SDR_map[sensor_num] == 0xFF) { // look for sensor in SDR table
     return SNR_NOT_FOUND;
@@ -115,30 +124,38 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
     return SNR_NOT_ACCESSIBLE;
   }
 
+  snr_cfg *cfg = &sensor_config[SnrNum_SnrCfg_map[sensor_num]];
   if (read_mode == get_from_sensor) {
-    status = sensor_read(sensor_num, reading);
-    if (status) {
+    if (cfg->pre_sen_read_hook)
+      cfg->pre_sen_read_hook(sensor_num, cfg->pre_sen_read_args);
+    
+    cfg->cache_status = sensor_read(sensor_num, reading);
+    if (cfg->cache_status == SNR_READ_SUCCESS || cfg->cache_status == SNR_READ_ACUR_SUCCESS) {
       if( !access_check(sensor_num) ) { // double check access to avoid not accessible read at same moment status change
         return SNR_NOT_ACCESSIBLE;
       }
-      return sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache_status;
+      if (cfg->post_sen_read_hook)
+        cfg->post_sen_read_hook(sensor_num, cfg->post_sen_read_args);
+      cal_mbr(sensor_num, reading);
+
+      return cfg->cache_status;
     } else {
       printf("sensor[%x] read fail\n",sensor_num);
-      return sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache_status;
+      return cfg->cache_status;
     }
   } else if (read_mode == get_from_cache) {
-    if (sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache_status == SNR_READ_SUCCESS
-        || sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache_status == SNR_READ_ACUR_SUCCESS) {
-      *reading = sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache;
+    if (cfg->cache_status == SNR_READ_SUCCESS
+        || cfg->cache_status == SNR_READ_ACUR_SUCCESS) {
+      *reading = cfg->cache;
       if( !access_check(sensor_num) ) { // double check access to avoid not accessible read at same moment status change
         return SNR_NOT_ACCESSIBLE;
       }
-      return sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache_status;
+      return cfg->cache_status;
     } else {
-      sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache = sensor_fail;
-      sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache_status = SNR_FAIL_TO_ACCESS;
+      cfg->cache = sensor_fail;
+      cfg->cache_status = SNR_FAIL_TO_ACCESS;
       printf("sensor[%x] cache read fail\n",sensor_num);
-      return sensor_config[SnrNum_SnrCfg_map[sensor_num]].cache_status;
+      return cfg->cache_status;
     }
   }
 

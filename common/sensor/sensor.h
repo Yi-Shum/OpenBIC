@@ -50,6 +50,11 @@ enum {
   SNR_POLLING_DISABLE,
 };
 
+typedef struct _sen_val {
+  int16_t integer;
+  int16_t fraction;
+} sen_val;
+
 typedef struct _snr_cfg__ {
   uint8_t num;
   uint8_t type;
@@ -61,6 +66,10 @@ typedef struct _snr_cfg__ {
   int arg1;
   int cache;
   uint8_t cache_status;
+  bool (*pre_sen_read_hook)(uint8_t, void *);
+  void *pre_sen_read_args;
+  bool (*post_sen_read_hook)(uint8_t, void *);
+  void *post_sen_read_args;
 } snr_cfg;
   
 extern bool enable_sensor_poll;
@@ -70,5 +79,8 @@ extern uint8_t SnrNum_SnrCfg_map[SENSOR_NUM_MAX];
 
 uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode);
 bool sensor_init(void);
+
+/* tmp75 */
+uint8_t tmp75_read(uint8_t sensor_num, int *reading);
 
 #endif
