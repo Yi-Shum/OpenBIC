@@ -129,7 +129,9 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
     if (cfg->pre_sen_read_hook)
       cfg->pre_sen_read_hook(sensor_num, cfg->pre_sen_read_args);
     
-    cfg->cache_status = sensor_read(sensor_num, reading);
+    if (cfg->sen_read)
+      cfg->cache_status = cfg->sen_read(sensor_num, reading);
+
     if (cfg->cache_status == SNR_READ_SUCCESS || cfg->cache_status == SNR_READ_ACUR_SUCCESS) {
       if( !access_check(sensor_num) ) { // double check access to avoid not accessible read at same moment status change
         return SNR_NOT_ACCESSIBLE;
@@ -192,6 +194,22 @@ void sensor_poll_init() {
   return;
 }
 
+static void reg_read_fn(void)
+{
+  for (uint16_t i = 0; i < SDR_NUM; i++) {
+    snr_cfg *p = sensor_config + i;
+    switch (p->type) {
+    case SEN_DEV_TMP75:
+      p->sen_read = tmp75_read;
+      break;
+    default:
+      p->sen_read = NULL;
+      printk("sen %d, type = %d is not supported!\n", i, p->type);
+      break;
+    }
+  }
+}
+
 bool sensor_init(void) {
   init_SnrNum();
   SDR_init();
@@ -208,6 +226,9 @@ bool sensor_init(void) {
     printf("SDR_NUM == 0\n");
     return false;
   }
+
+  /* register read api of sensor_config */
+  reg_read_fn();
 
   pal_fix_Snrconfig();
   map_SnrNum_SDR_CFG();  

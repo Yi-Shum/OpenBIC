@@ -25,6 +25,11 @@
 #define type_nvme  0x05
 #define type_pch   0x06
 
+enum sen_dev {
+  SEN_DEV_TMP75 = 0,
+  SEN_DEV_MAX
+};
+
 static inline int acur_cal_MBR(uint8_t sensor_num, int val) { // for better accuracy, enlarge SDR to two byte scale
   if( SDR_M(sensor_num) == 0 ) {
     return ( (val << 8) * SDR_Rexp(sensor_num) );
@@ -70,6 +75,7 @@ typedef struct _snr_cfg__ {
   void *pre_sen_read_args;
   bool (*post_sen_read_hook)(uint8_t, void *);
   void *post_sen_read_args;
+  uint8_t (*sen_read)(uint8_t, int *);
 } snr_cfg;
   
 extern bool enable_sensor_poll;
