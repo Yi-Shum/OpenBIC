@@ -57,3 +57,8 @@ uint8_t ISL69254_read(uint8_t sensor_num, int* reading) {
 
   return SNR_READ_SUCCESS;
 }
+
+uint8_t ISL69254_init(uint8_t sensor_num) {
+  sensor_config[SnrNum_SnrCfg_map[sensor_num]].read = ISL69254_read;
+  return true;
+}

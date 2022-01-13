@@ -5,7 +5,10 @@
 
 uint8_t tmp75_read(uint8_t sensor_num, int *reading) {
   uint8_t retry = 5;
-  I2C_MSG msg;
+  I2C_MSG msg = {0};
+
+  if (!reading)
+    return SNR_UNSPECIFIED_ERROR;
 
   msg.bus = sensor_config[SnrNum_SnrCfg_map[sensor_num]].port;
   msg.slave_addr = sensor_config[SnrNum_SnrCfg_map[sensor_num]].slave_addr;
@@ -19,4 +22,10 @@ uint8_t tmp75_read(uint8_t sensor_num, int *reading) {
   sen_val *sval = (sen_val *)reading;
   sval->integer = msg.data[0];
   return SNR_READ_SUCCESS;
+}
+
+uint8_t tmp75_init(uint8_t sensor_num)
+{
+  sensor_config[SnrNum_SnrCfg_map[sensor_num]].read = tmp75_read;
+  return true;
 }
