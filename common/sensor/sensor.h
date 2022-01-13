@@ -60,6 +60,8 @@ static inline int cal_MBR(uint8_t sensor_num, int val){
 
 static inline void sen_val_from_double(struct _sen_val *val, double inp)
 {
+  if(!val)
+    return;
 	val->integer =  (int32_t) inp;
 	val->fraction = (int32_t)(inp * 1000) % 1000;
 }
