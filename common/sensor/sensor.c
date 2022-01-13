@@ -26,6 +26,7 @@ snr_cfg *sensor_config;
 
 SEN_DRIVE_INIT_DECLARE(tmp75);
 SEN_DRIVE_INIT_DECLARE(ISL69254);
+SEN_DRIVE_INIT_DECLARE(nvme);
 
 struct sen_drive_api {
   enum sen_dev dev;
@@ -33,6 +34,7 @@ struct sen_drive_api {
 } sen_drive_tbl[] = {
   SEN_DRIVE_TYPE_INIT_MAP(tmp75),
   SEN_DRIVE_TYPE_INIT_MAP(ISL69254),
+  SEN_DRIVE_TYPE_INIT_MAP(nvme),
 };
 
 static void init_SnrNum(void) {
