@@ -34,7 +34,7 @@ ISL69254_pre_proc_param ISL69254_pre_read_args[] =
 static uint8_t SnrCfg_num;
 
 snr_cfg plat_sensor_config[] = {
-  /* number,                           type,            port,           address,                  offset,             access check       arg0,   arg1,   cache,   cache_status,    pre_hook_fn,       pre_hook_args,   post_hook_fn,      post_hook_args,     sen_read_fn*/
+  /* number,                           type,            port,           address,                  offset,             access check       arg0,   arg1,   cache,   cache_status,    pre_hook_fn,       pre_hook_args,   post_hook_fn,      post_hook_args,     init_arg*/
 
   // temperature
   {SENSOR_NUM_TEMP_TMP75_IN          , type_tmp75     , i2c_bus2      , tmp75_in_addr           , tmp75_tmp_offset  , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS, pre_tmp75_read,    tmp75_test,      post_tmp75_read,   tmp75_test + 1,     NULL},

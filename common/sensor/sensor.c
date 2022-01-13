@@ -25,12 +25,14 @@ const int negative_ten_power[16] = {1,1,1,1,1,1,1,1000000000,100000000,10000000,
 snr_cfg *sensor_config;
 
 SEN_DRIVE_INIT_DECLARE(tmp75);
+SEN_DRIVE_INIT_DECLARE(ISL69254);
 
 struct sen_drive_api {
   enum sen_dev dev;
   uint8_t (*init)(uint8_t);
 } sen_drive_tbl[] = {
   SEN_DRIVE_TYPE_INIT_MAP(tmp75),
+  SEN_DRIVE_TYPE_INIT_MAP(ISL69254),
 };
 
 static void init_SnrNum(void) {

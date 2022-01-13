@@ -104,7 +104,6 @@ bool sensor_init(void);
 
 /* tmp75 */
 uint8_t tmp75_read(uint8_t sensor_num, int *reading);
-uint8_t ISL69254_read(uint8_t sensor_num, int* reading);
 
 /* mp5990 */
 uint8_t mp5990_read(uint8_t sensor_num, int *reading);
