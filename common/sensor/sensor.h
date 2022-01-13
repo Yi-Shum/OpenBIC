@@ -27,10 +27,10 @@
 #define type_pch   0x06
 
 enum sen_dev {
-  SEN_DEV_TMP75 = 0,
-  SEN_DEV_ISL69254 = 0x03,
-  SEN_DEV_MP5990 = 0x10,
-  SEN_DEV_MAX
+  sen_dev_tmp75 = 0,
+  sen_dev_ISL69254 = 0x03,
+  sen_dev_mp5990 = 0x10,
+  sen_dev_max
 };
 
 
@@ -87,7 +87,11 @@ typedef struct _snr_cfg__ {
   void *pre_sen_read_args;
   bool (*post_sen_read_hook)(uint8_t, void *);
   void *post_sen_read_args;
-  uint8_t (*sen_read)(uint8_t, int *);
+  void *init_args;
+
+  /* if there is new parameter should be added, please add on above */
+  uint8_t (*init)(uint8_t, int *);
+  uint8_t (*read)(uint8_t, int *);
 } snr_cfg;
 
 extern bool enable_sensor_poll;

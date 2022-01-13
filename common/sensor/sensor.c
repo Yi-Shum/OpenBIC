@@ -7,6 +7,11 @@
 #include "sensor.h"
 #include "sensor_def.h"
 
+#define SEN_DRIVE_INIT_DECLARE(name) \
+  uint8_t name##_init(uint8_t snr_num)
+
+#define SEN_DRIVE_TYPE_INIT_MAP(name) {sen_dev_##name, name##_init}
+
 struct k_thread sensor_poll;
 K_KERNEL_STACK_MEMBER(sensor_poll_stack, sensor_poll_stack_size);
 
@@ -18,6 +23,15 @@ bool enable_sensor_poll = 1;
 const int negative_ten_power[16] = {1,1,1,1,1,1,1,1000000000,100000000,10000000,1000000,100000,10000,1000,100,10};
 
 snr_cfg *sensor_config;
+
+SEN_DRIVE_INIT_DECLARE(tmp75);
+
+struct sen_drive_api {
+  enum sen_dev dev;
+  uint8_t (*init)(uint8_t);
+} sen_drive_tbl[] = {
+  SEN_DRIVE_TYPE_INIT_MAP(tmp75),
+};
 
 static void init_SnrNum(void) {
   for (int i = 0; i < SENSOR_NUM_MAX; i++) {
@@ -140,8 +154,8 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
       }
     }
     
-    if (cfg->sen_read)
-      cfg->cache_status = cfg->sen_read(sensor_num, reading);
+    if (cfg->read)
+      cfg->cache_status = cfg->read(sensor_num, reading);
 
     if (cfg->cache_status == SNR_READ_SUCCESS || cfg->cache_status == SNR_READ_ACUR_SUCCESS) {
       if( !access_check(sensor_num) ) { // double check access to avoid not accessible read at same moment status change
@@ -211,23 +225,24 @@ void sensor_poll_init() {
   return;
 }
 
-static void reg_read_fn(void)
+static void drive_init(void)
 {
-  for (uint16_t i = 0; i < SDR_NUM; i++) {
+  uint16_t drive_num = ARRAY_SIZE(sen_drive_tbl);
+  uint16_t i, j;
+
+  for (i = 0; i < SDR_NUM; i++) {
     snr_cfg *p = sensor_config + i;
-    switch (p->type) {
-    case SEN_DEV_TMP75:
-      p->sen_read = tmp75_read;
+    for (j = 0; j < drive_num; j++) {
+      if (p->type == sen_drive_tbl[j].dev) {
+        sen_drive_tbl[j].init(p->num);
+        printf("i = %d, p->sen_read = %p\n", i, p->read);
       break;
-    case SEN_DEV_ISL69254:
-      p->sen_read = ISL69254_read;
-    case SEN_DEV_MP5990:
-      p->sen_read = mp5990_read;
-      break;
-    default:
-      p->sen_read = NULL;
+      }
+    }
+
+    if (j == drive_num) {
       printk("sen %d, type = %d is not supported!\n", i, p->type);
-      break;
+      p->read = NULL;
     }
   }
 }
@@ -249,12 +264,12 @@ bool sensor_init(void) {
     return false;
   }
 
-  /* register read api of sensor_config */
-  reg_read_fn();
-
   pal_fix_Snrconfig();
   map_SnrNum_SDR_CFG();  
   
+  /* register read api of sensor_config */
+  drive_init();
+
   if (DEBUG_SNR) {
     printf("SNR0: %s\n",full_sensor_table[SnrNum_SDR_map[1]].ID_str);
   }

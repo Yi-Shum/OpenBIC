@@ -20,3 +20,9 @@ uint8_t tmp75_read(uint8_t sensor_num, int *reading) {
   sval->integer = msg.data[0];
   return SNR_READ_SUCCESS;
 }
+
+uint8_t tmp75_init(uint8_t sensor_num)
+{
+  sensor_config[SnrNum_SnrCfg_map[sensor_num]].read = tmp75_read;
+  return true;
+}
