@@ -221,6 +221,8 @@ static void reg_read_fn(void)
       break;
     case SEN_DEV_ISL69254:
       p->sen_read = ISL69254_read;
+    case SEN_DEV_MP5990:
+      p->sen_read = mp5990_read;
       break;
     default:
       p->sen_read = NULL;
