@@ -219,6 +219,9 @@ static void reg_read_fn(void)
     case SEN_DEV_TMP75:
       p->sen_read = tmp75_read;
       break;
+    case SEN_DEV_ISL69254:
+      p->sen_read = ISL69254_read;
+      break;
     default:
       p->sen_read = NULL;
       printk("sen %d, type = %d is not supported!\n", i, p->type);

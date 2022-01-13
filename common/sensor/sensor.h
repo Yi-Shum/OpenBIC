@@ -27,6 +27,7 @@
 
 enum sen_dev {
   SEN_DEV_TMP75 = 0,
+  SEN_DEV_ISL69254 = 0x03,
   SEN_DEV_MAX
 };
 
@@ -79,7 +80,7 @@ typedef struct _snr_cfg__ {
   void *post_sen_read_args;
   uint8_t (*sen_read)(uint8_t, int *);
 } snr_cfg;
-  
+
 extern bool enable_sensor_poll;
 extern uint8_t SDR_NUM;
 extern snr_cfg *sensor_config;
@@ -90,5 +91,6 @@ bool sensor_init(void);
 
 /* tmp75 */
 uint8_t tmp75_read(uint8_t sensor_num, int *reading);
+uint8_t ISL69254_read(uint8_t sensor_num, int* reading);
 
 #endif
