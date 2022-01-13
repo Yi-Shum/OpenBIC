@@ -2,6 +2,7 @@
 #define SENSOR_H
 
 #include "sdr.h"
+#include "pmbus.h"
 
 #define sensor_poll_stack_size 1000
 
@@ -27,8 +28,15 @@
 
 enum sen_dev {
   SEN_DEV_TMP75 = 0,
+  SEN_DEV_MP5990 = 0x10,
   SEN_DEV_MAX
 };
+
+
+typedef struct _sen_val {
+  int16_t integer;
+  int16_t fraction;
+} sen_val;
 
 static inline int acur_cal_MBR(uint8_t sensor_num, int val) { // for better accuracy, enlarge SDR to two byte scale
   if( SDR_M(sensor_num) == 0 ) {
@@ -44,6 +52,12 @@ static inline int cal_MBR(uint8_t sensor_num, int val){
   return ( val * SDR_Rexp(sensor_num) / SDR_M(sensor_num) + round_add(sensor_num, val) ); 
 }
 
+static inline void sen_val_from_double(struct _sen_val *val, double inp)
+{
+	val->integer =  (int32_t) inp;
+	val->fraction = (int32_t)(inp * 1000) % 1000;
+}
+
 enum {
   SNR_READ_SUCCESS,
   SNR_READ_ACUR_SUCCESS,
@@ -56,11 +70,6 @@ enum {
   SNR_PRE_READ_ERROR,
   SNR_POST_READ_ERROR
 };
-
-typedef struct _sen_val {
-  int16_t integer;
-  int16_t fraction;
-} sen_val;
 
 typedef struct _snr_cfg__ {
   uint8_t num;
@@ -91,4 +100,6 @@ bool sensor_init(void);
 /* tmp75 */
 uint8_t tmp75_read(uint8_t sensor_num, int *reading);
 
+/* mp5990 */
+uint8_t mp5990_read(uint8_t sensor_num, int *reading);
 #endif
