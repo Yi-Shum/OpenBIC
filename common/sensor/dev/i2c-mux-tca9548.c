@@ -16,7 +16,6 @@ bool tca9548_select_chan(uint8_t snr_num, void *args) {
 
   msg.bus = cfg->port;
   msg.slave_addr = p->addr;
-  msg.rx_len = 0;
   msg.tx_len = 1;
   msg.data[0] = (1 << (p->chan));
 
