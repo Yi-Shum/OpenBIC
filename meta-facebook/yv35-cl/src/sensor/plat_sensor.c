@@ -30,6 +30,28 @@ ISL69254_pre_proc_param ISL69254_pre_read_args[] =
 {{ 0x38,      0x1,      0x0},
  { 0x38,      0x2,      0x1},};
 
+struct tca9548 mux_conf_addr_0xe0[8] =
+{
+  [0] = {.addr = 0xe0, .chan = 0},
+  [1] = {.addr = 0xe0, .chan = 1},
+  [2] = {.addr = 0xe0, .chan = 2},
+  [3] = {.addr = 0xe0, .chan = 3},
+  [4] = {.addr = 0xe0, .chan = 4},
+  [5] = {.addr = 0xe0, .chan = 5},
+  [6] = {.addr = 0xe0, .chan = 6},
+  [7] = {.addr = 0xe0, .chan = 7},
+};
+struct tca9548 mux_conf_addr_0xe2[8] =
+{
+  [0] = {.addr = 0xe2, .chan = 0},
+  [1] = {.addr = 0xe2, .chan = 1},
+  [2] = {.addr = 0xe2, .chan = 2},
+  [3] = {.addr = 0xe2, .chan = 3},
+  [4] = {.addr = 0xe2, .chan = 4},
+  [5] = {.addr = 0xe2, .chan = 5},
+  [6] = {.addr = 0xe2, .chan = 6},
+  [7] = {.addr = 0xe2, .chan = 7},
+};
 
 static uint8_t SnrCfg_num;
 
