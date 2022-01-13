@@ -112,8 +112,6 @@ bool sensor_init(void);
 /* tmp75 */
 uint8_t tmp75_read(uint8_t sensor_num, int *reading);
 
-/* mp5990 */
-uint8_t mp5990_read(uint8_t sensor_num, int *reading);
 /* i2c-mux tca9548 */
 bool tca9548_select_chan(uint8_t snr_num, void *args);
 #endif
