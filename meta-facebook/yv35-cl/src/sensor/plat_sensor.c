@@ -175,7 +175,7 @@ bool pre_isl69254_read(uint8_t snr_num, void *args) {
   uint8_t retry = 5;
   I2C_MSG msg;
 
-  if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf)) {
+  if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf) == false) {
     printk("pre_isl69254_read, set mux fail\n");
     return false;
   }
