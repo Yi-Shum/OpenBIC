@@ -17,7 +17,7 @@
 #include "plat_func.h"
 
 void device_init() {
-  adc_init();
+  //adc_init();
   peci_init();
   hsc_init();
 }

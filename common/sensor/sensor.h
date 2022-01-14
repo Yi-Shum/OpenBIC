@@ -28,6 +28,7 @@
 
 enum sen_dev {
   sen_dev_tmp75 = 0,
+  sen_dev_adc_asd = 0x01,
   sen_dev_ISL69254 = 0x03,
   sen_dev_nvme = 0x05,
   sen_dev_mp5990 = 0x10,
@@ -101,6 +102,11 @@ typedef struct _snr_cfg__ {
   uint8_t (*init)(uint8_t, int *);
   uint8_t (*read)(uint8_t, int *);
 } snr_cfg;
+
+/* INIT arg */
+typedef struct _adc_asd_init_param {
+  bool is_init;
+} adc_asd_init_param;
 
 extern bool enable_sensor_poll;
 extern uint8_t SDR_NUM;

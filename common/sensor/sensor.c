@@ -25,6 +25,7 @@ const int negative_ten_power[16] = {1,1,1,1,1,1,1,1000000000,100000000,10000000,
 snr_cfg *sensor_config;
 
 SEN_DRIVE_INIT_DECLARE(tmp75);
+SEN_DRIVE_INIT_DECLARE(adc_asd);
 SEN_DRIVE_INIT_DECLARE(ISL69254);
 SEN_DRIVE_INIT_DECLARE(nvme);
 SEN_DRIVE_INIT_DECLARE(mp5990);
@@ -34,6 +35,7 @@ struct sen_drive_api {
   uint8_t (*init)(uint8_t);
 } sen_drive_tbl[] = {
   SEN_DRIVE_TYPE_INIT_MAP(tmp75),
+  SEN_DRIVE_TYPE_INIT_MAP(adc_asd),
   SEN_DRIVE_TYPE_INIT_MAP(ISL69254),
   SEN_DRIVE_TYPE_INIT_MAP(nvme),
   SEN_DRIVE_TYPE_INIT_MAP(mp5990),
