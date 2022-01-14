@@ -8,34 +8,26 @@
 #include "plat_func.h"
 #include "pal.h"
 
-typedef struct _ISL69254_pre_proc_param {
-  /* mux address */
-  uint8_t mux_addr;
-  /* mux channel to set */
-  uint8_t channel;
+typedef struct _isl69254_pre_proc_arg {
+  struct tca9548 *mux_conf; 
   /* vr page to set */
   uint8_t vr_page;
-} ISL69254_pre_proc_param;
+} isl69254_pre_proc_arg;
 
 bool stby_access(uint8_t snr_num);
 bool DC_access(uint8_t snr_num);
 bool post_access(uint8_t snr_num);
 bool pre_tmp75_read(uint8_t snr_num, void *args);
 bool post_tmp75_read(uint8_t snr_num, void *args);
-bool pre_ISL69254_read(uint8_t snr_num, void *args);
+bool pre_isl69254_read(uint8_t snr_num, void *args);
 bool pre_nvme_read(uint8_t snr_num, void *args);
 
 /* Init flag */
-adc_asd_init_param adc_asd_init_args[] = {
+adc_asd_init_arg adc_asd_init_args[] = {
   [0] = {.is_init = false}
 };
 
 uint8_t tmp75_test[] = {62, 93};
-
-ISL69254_pre_proc_param ISL69254_pre_read_args[] =
-/* mux_addr,  mux_channel,  vr_page */
-{{ 0x38,      0x1,      0x0},
- { 0x38,      0x2,      0x1},};
 
 struct tca9548 mux_conf_addr_0xe0[8] =
 {
@@ -58,6 +50,13 @@ struct tca9548 mux_conf_addr_0xe2[8] =
   [5] = {.addr = 0xe2, .chan = 5},
   [6] = {.addr = 0xe2, .chan = 6},
   [7] = {.addr = 0xe2, .chan = 7},
+};
+
+isl69254_pre_proc_arg isl69254_pre_read_args[] =
+{
+        /* mux_conf,                vr_page */
+  [0] = { &mux_conf_addr_0xe2[6],      0x0},
+  [1] = { &mux_conf_addr_0xe2[6],      0x1},
 };
 
 static uint8_t SnrCfg_num;
@@ -97,32 +96,32 @@ snr_cfg plat_sensor_config[] = {
   {SENSOR_NUM_VOL_STBY1V8            , sen_dev_adc_asd, adc_port15    , 0                       , 0                  , stby_access      , 1     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
 
   // VR voltage
-  {SENSOR_NUM_VOL_PVCCD_HV           , sen_dev_ISL69254, i2c_bus5      , PVCCD_HV_addr           , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_VOL_PVCCINFAON         , sen_dev_ISL69254, i2c_bus5      , PVCCINFAON_addr         , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_VOL_PVCCFA_EHV         , sen_dev_ISL69254, i2c_bus5      , PVCCFA_EHV_addr         , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_VOL_PVCCIN             , sen_dev_ISL69254, i2c_bus5      , PVCCIN_addr             , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_VOL_PVCCFA_EHV_FIVRA   , sen_dev_ISL69254, i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_VOL_PVCCD_HV           , sen_dev_isl69254, i2c_bus5      , PVCCD_HV_addr           , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_VOL_PVCCINFAON         , sen_dev_isl69254, i2c_bus5      , PVCCINFAON_addr         , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_VOL_PVCCFA_EHV         , sen_dev_isl69254, i2c_bus5      , PVCCFA_EHV_addr         , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_VOL_PVCCIN             , sen_dev_isl69254, i2c_bus5      , PVCCIN_addr             , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_VOL_PVCCFA_EHV_FIVRA   , sen_dev_isl69254, i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
   
   // VR current
-  {SENSOR_NUM_CUR_PVCCD_HV           , sen_dev_ISL69254, i2c_bus5      , PVCCD_HV_addr           , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_CUR_PVCCINFAON         , sen_dev_ISL69254, i2c_bus5      , PVCCINFAON_addr         , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_CUR_PVCCFA_EHV         , sen_dev_ISL69254, i2c_bus5      , PVCCFA_EHV_addr         , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_CUR_PVCCIN             , sen_dev_ISL69254, i2c_bus5      , PVCCIN_addr             , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_CUR_PVCCFA_EHV_FIVRA   , sen_dev_ISL69254, i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_CUR_PVCCD_HV           , sen_dev_isl69254, i2c_bus5      , PVCCD_HV_addr           , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_CUR_PVCCINFAON         , sen_dev_isl69254, i2c_bus5      , PVCCINFAON_addr         , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_CUR_PVCCFA_EHV         , sen_dev_isl69254, i2c_bus5      , PVCCFA_EHV_addr         , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_CUR_PVCCIN             , sen_dev_isl69254, i2c_bus5      , PVCCIN_addr             , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_CUR_PVCCFA_EHV_FIVRA   , sen_dev_isl69254, i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_CUR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
   
   // VR temperature
-  {SENSOR_NUM_TEMP_PVCCD_HV          , sen_dev_ISL69254, i2c_bus5      , PVCCD_HV_addr           , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_TEMP_PVCCINFAON        , sen_dev_ISL69254, i2c_bus5      , PVCCINFAON_addr         , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_TEMP_PVCCFA_EHV        , sen_dev_ISL69254, i2c_bus5      , PVCCFA_EHV_addr         , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_TEMP_PVCCIN            , sen_dev_ISL69254, i2c_bus5      , PVCCIN_addr             , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_TEMP_PVCCFA_EHV_FIVRA  , sen_dev_ISL69254, i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_TEMP_PVCCD_HV          , sen_dev_isl69254, i2c_bus5      , PVCCD_HV_addr           , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_TEMP_PVCCINFAON        , sen_dev_isl69254, i2c_bus5      , PVCCINFAON_addr         , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_TEMP_PVCCFA_EHV        , sen_dev_isl69254, i2c_bus5      , PVCCFA_EHV_addr         , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_TEMP_PVCCIN            , sen_dev_isl69254, i2c_bus5      , PVCCIN_addr             , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_TEMP_PVCCFA_EHV_FIVRA  , sen_dev_isl69254, i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_TEMP_CMD       , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
   
   // VR power 
-  {SENSOR_NUM_PWR_PVCCD_HV           , sen_dev_ISL69254, i2c_bus5      , PVCCD_HV_addr           , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_PWR_PVCCINFAON         , sen_dev_ISL69254, i2c_bus5      , PVCCINFAON_addr         , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_PWR_PVCCFA_EHV         , sen_dev_ISL69254, i2c_bus5      , PVCCFA_EHV_addr         , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_PWR_PVCCIN             , sen_dev_ISL69254, i2c_bus5      , PVCCIN_addr             , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
-  {SENSOR_NUM_PWR_PVCCFA_EHV_FIVRA   , sen_dev_ISL69254, i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_ISL69254_read,   &ISL69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_PWR_PVCCD_HV           , sen_dev_isl69254, i2c_bus5      , PVCCD_HV_addr           , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_PWR_PVCCINFAON         , sen_dev_isl69254, i2c_bus5      , PVCCINFAON_addr         , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_PWR_PVCCFA_EHV         , sen_dev_isl69254, i2c_bus5      , PVCCFA_EHV_addr         , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_PWR_PVCCIN             , sen_dev_isl69254, i2c_bus5      , PVCCIN_addr             , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
+  {SENSOR_NUM_PWR_PVCCFA_EHV_FIVRA   , sen_dev_isl69254, i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_PWR_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[1],                 NULL,                 NULL,                    NULL},
   
   // ME
   {SENSOR_NUM_TEMP_PCH               , type_pch        , i2c_bus3      , PCH_addr                , 0                 , post_access      , 0     , 0     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,                    NULL},
@@ -163,27 +162,21 @@ bool post_tmp75_read(uint8_t snr_num, void *args)
  * set mux and VR page
  *
  * @param snr_num sensor number
- * @param args pointer to vr_pre_param
+ * @param args pointer to isl69254_pre_proc_arg
  * @retval true if setting mux and page is successful.
  * @retval false if setting mux or page fails.
  */
-bool pre_ISL69254_read(uint8_t snr_num, void *args) {
+bool pre_isl69254_read(uint8_t snr_num, void *args) {
   if (args == NULL) {
     return false;
   }
 
-  ISL69254_pre_proc_param *pre_proc_args = (ISL69254_pre_proc_param*)args;
+  isl69254_pre_proc_arg *pre_proc_args = (isl69254_pre_proc_arg*)args;
   uint8_t retry = 5;
   I2C_MSG msg;
 
-  /* todo: call a set mux channel function */
-  msg.bus = sensor_config[SnrNum_SnrCfg_map[snr_num]].port;
-  msg.slave_addr = pre_proc_args->mux_addr;
-  msg.data[0] = pre_proc_args->channel;
-  msg.tx_len = 1;
-  msg.rx_len = 0;
-  if (i2c_master_write(&msg, retry)) {
-    /* set fail */
+  if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf)) {
+    printk("pre_isl69254_read, set mux fail\n");
     return false;
   }
 
@@ -194,7 +187,7 @@ bool pre_ISL69254_read(uint8_t snr_num, void *args) {
   msg.data[0] = 0x00;
   msg.data[1] = pre_proc_args->vr_page;
   if (i2c_master_write(&msg, retry)) {
-    /* set fail */
+    printk("pre_isl69254_read, set page fail\n");
     return false;
   }
   return true;
@@ -205,7 +198,7 @@ bool pre_ISL69254_read(uint8_t snr_num, void *args) {
  * set mux
  *
  * @param snr_num sensor number
- * @param args pointer to nvme_pre_param
+ * @param args pointer to struct tca9548
  * @retval true if setting mux is successful.
  * @retval false if setting mux fails.
  */

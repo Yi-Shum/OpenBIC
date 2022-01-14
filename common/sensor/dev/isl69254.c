@@ -3,14 +3,9 @@
 #include "sensor.h"
 #include "hal_i2c.h"
 
-#define ISL69254_VOL_CMD              0x8B
-#define ISL69254_CUR_CMD              0x8C
-#define ISL69254_TEMP_CMD             0x8D
-#define ISL69254_PWR_CMD              0x96
 
-
-uint8_t ISL69254_read(uint8_t sensor_num, int* reading) {
-  if(reading == NULL) {
+uint8_t isl69254_read(uint8_t sensor_num, int* reading) {
+  if (reading == NULL) {
     return SNR_UNSPECIFIED_ERROR;
   }
 
@@ -29,36 +24,30 @@ uint8_t ISL69254_read(uint8_t sensor_num, int* reading) {
     /* read fail */
     return SNR_FAIL_TO_ACCESS;
   }
-
-  switch (sensor_config[SnrNum_SnrCfg_map[sensor_num]].offset) {
-  case ISL69254_VOL_CMD:
-    /* unit get from sensor: 1 mV
-       return unit: 1 V */
+  
+  uint8_t offset = sensor_config[SnrNum_SnrCfg_map[sensor_num]].offset;
+  if (offset == PMBUS_READ_VOUT) {
+    /* 1 mV/LSB */
     snr_val->integer = ((msg.data[1] << 8) | msg.data[0]) / 1000;
     snr_val->fraction = ((msg.data[1] << 8) | msg.data[0]) % 1000;
-    break;
-  case ISL69254_CUR_CMD:
-    /* unit get from sensor: 0.1 Amp
-       return unit: 1 Amp */
+  } else if (offset == PMBUS_READ_IOUT) {
+    /* 0.1 A/LSB */
     snr_val->integer = (((msg.data[1] << 8) | msg.data[0]) / 10);
     snr_val->fraction = ((((msg.data[1] << 8) | msg.data[0]) % 10) * 100);
-    break;
-  case ISL69254_TEMP_CMD:
-    /* unit: 1 Degree C */
+  } else if (offset == PMBUS_READ_TEMPERATURE_1) {
+    /* 1 Degree C/LSB */
     snr_val->integer = ((msg.data[1] << 8) | msg.data[0]);
-    break;
-  case ISL69254_PWR_CMD:
-    /* unit: 1 Watt */
+  } else if (offset == PMBUS_READ_POUT) {
+    /* 1 Watt/LSB */
     snr_val->integer = ((msg.data[1] << 8) | msg.data[0]);
-    break;
-  default:
+  } else {
     return SNR_FAIL_TO_ACCESS;
   }
 
   return SNR_READ_SUCCESS;
 }
 
-uint8_t ISL69254_init(uint8_t sensor_num) {
-  sensor_config[SnrNum_SnrCfg_map[sensor_num]].read = ISL69254_read;
+uint8_t isl69254_init(uint8_t sensor_num) {
+  sensor_config[SnrNum_SnrCfg_map[sensor_num]].read = isl69254_read;
   return true;
 }

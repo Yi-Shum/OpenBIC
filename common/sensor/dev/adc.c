@@ -123,7 +123,7 @@ uint8_t adc_asd_init(uint8_t sensor_num)
     if ( !sensor_config[SnrNum_SnrCfg_map[sensor_num]].init_args )
         return false;
 
-    adc_asd_init_param *init_args = (adc_asd_init_param *) sensor_config[SnrNum_SnrCfg_map[sensor_num]].init_args;
+    adc_asd_init_arg *init_args = (adc_asd_init_arg *) sensor_config[SnrNum_SnrCfg_map[sensor_num]].init_args;
     if ( init_args->is_init )
         goto skip_init;
 

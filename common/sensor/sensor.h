@@ -29,9 +29,10 @@
 enum sen_dev {
   sen_dev_tmp75 = 0,
   sen_dev_adc_asd = 0x01,
-  sen_dev_ISL69254 = 0x03,
+  sen_dev_isl69254 = 0x03,
   sen_dev_nvme = 0x05,
   sen_dev_mp5990 = 0x10,
+  sen_dev_isl28022 = 0x11,
   sen_dev_max
 };
 
@@ -45,6 +46,18 @@ struct tca9548 {
   uint8_t addr;
   uint8_t chan;
 };
+
+typedef struct _isl28022_init_arg {
+  /* value to set configuration register */
+  uint16_t config;
+  /* R_shunt valus, unit: milliohm */
+  uint32_t r_shunt;
+
+  /* Initailize function will set following arguments, no need to give value */
+  bool is_init;
+  /* used when read current/power */
+  float current_LSB;
+} isl28022_init_arg;
 
 static inline int acur_cal_MBR(uint8_t sensor_num, int val) { // for better accuracy, enlarge SDR to two byte scale
   if( SDR_M(sensor_num) == 0 ) {
@@ -64,8 +77,8 @@ static inline void sen_val_from_double(struct _sen_val *val, double inp)
 {
   if(!val)
     return;
-	val->integer =  (int32_t) inp;
-	val->fraction = (int32_t)(inp * 1000) % 1000;
+  val->integer =  (int32_t) inp;
+  val->fraction = (int32_t)(inp * 1000) % 1000;
 }
 
 enum {
@@ -106,9 +119,9 @@ typedef struct _snr_cfg__ {
 } snr_cfg;
 
 /* INIT arg */
-typedef struct _adc_asd_init_param {
+typedef struct _adc_asd_init_arg {
   bool is_init;
-} adc_asd_init_param;
+} adc_asd_init_arg;
 
 extern bool enable_sensor_poll;
 extern uint8_t SDR_NUM;

@@ -1,3 +1,6 @@
+#ifndef PMBUS_H
+#define PMBUS_H
+
 enum pmbus_regs {
 	PMBUS_PAGE			        = 0x00,
 	PMBUS_OPERATION			    = 0x01,
@@ -118,3 +121,5 @@ enum pmbus_regs {
 	PMBUS_MFR_MAX_TEMP_2		= 0xC1,
 	PMBUS_MFR_MAX_TEMP_3		= 0xC2,
 };
+
+#endif
