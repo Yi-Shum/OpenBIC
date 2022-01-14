@@ -1,14 +1,16 @@
 #include <stdio.h>
+#include <string.h>
 #include "sensor.h"
 #include "hal_i2c.h"
 #include "pal.h"
 
 
-uint8_t mp5990_read(uint8_t sensor_num, int *reading) {
+uint8_t mp5990_read(uint8_t sensor_num, int *reading) 
+{
   
   uint8_t retry = 5;
   double val;
-  I2C_MSG msg;
+  I2C_MSG msg = {0};
   
   snr_cfg *cfg = &sensor_config[SnrNum_SnrCfg_map[sensor_num]];
   
@@ -43,7 +45,14 @@ uint8_t mp5990_read(uint8_t sensor_num, int *reading) {
   }
 
   sen_val *sval = (sen_val *)reading;
+  memset(sval, 0, sizeof(*sval));
   sen_val_from_double(sval, val);
 
   return SNR_READ_SUCCESS;
+}
+
+uint8_t mp5990_init(uint8_t sensor_num)
+{
+  sensor_config[SnrNum_SnrCfg_map[sensor_num]].read = mp5990_read;
+  return true;
 }

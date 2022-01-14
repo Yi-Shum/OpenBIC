@@ -40,6 +40,11 @@ typedef struct _sen_val {
   int16_t fraction;
 } sen_val;
 
+struct tca9548 {
+  uint8_t addr;
+  uint8_t chan;
+};
+
 static inline int acur_cal_MBR(uint8_t sensor_num, int val) { // for better accuracy, enlarge SDR to two byte scale
   if( SDR_M(sensor_num) == 0 ) {
     return ( (val << 8) * SDR_Rexp(sensor_num) );
@@ -56,6 +61,8 @@ static inline int cal_MBR(uint8_t sensor_num, int val){
 
 static inline void sen_val_from_double(struct _sen_val *val, double inp)
 {
+  if(!val)
+    return;
 	val->integer =  (int32_t) inp;
 	val->fraction = (int32_t)(inp * 1000) % 1000;
 }
@@ -106,6 +113,6 @@ bool sensor_init(void);
 /* tmp75 */
 uint8_t tmp75_read(uint8_t sensor_num, int *reading);
 
-/* mp5990 */
-uint8_t mp5990_read(uint8_t sensor_num, int *reading);
+/* i2c-mux tca9548 */
+bool tca9548_select_chan(uint8_t snr_num, void *args);
 #endif
