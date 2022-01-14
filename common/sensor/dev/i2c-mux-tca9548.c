@@ -15,7 +15,8 @@ bool tca9548_select_chan(uint8_t snr_num, void *args) {
   I2C_MSG msg = {0};
 
   msg.bus = cfg->port;
-  msg.slave_addr = p->addr;
+  /* change address to 7-bit */
+  msg.slave_addr = ((p->addr) >> 1);
   msg.tx_len = 1;
   msg.data[0] = (1 << (p->chan));
 
