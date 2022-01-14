@@ -12,6 +12,8 @@
 
 #define SEN_DRIVE_TYPE_INIT_MAP(name) {sen_dev_##name, name##_init}
 
+#define SEN_READ_RETRY_MAX 3
+
 struct k_thread sensor_poll;
 K_KERNEL_STACK_MEMBER(sensor_poll_stack, sensor_poll_stack_size);
 
@@ -162,10 +164,12 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
       }
     }
     
+    int status = SNR_READ_API_UNREGISTER;
     if (cfg->read)
-      cfg->cache_status = cfg->read(sensor_num, reading);
+      status = cfg->read(sensor_num, reading);
 
-    if (cfg->cache_status == SNR_READ_SUCCESS || cfg->cache_status == SNR_READ_ACUR_SUCCESS) {
+    if (status == SNR_READ_SUCCESS || status == SNR_READ_ACUR_SUCCESS) {
+      cfg->retry = 0;
       if( !access_check(sensor_num) ) { // double check access to avoid not accessible read at same moment status change
         return SNR_NOT_ACCESSIBLE;
       }
@@ -178,10 +182,15 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
         }
       }
       cal_mbr(sensor_num, reading);
-
+      cfg->cache_status = status;
       return cfg->cache_status;
     } else {
-      printf("sensor[%x] read fail\n",sensor_num);
+      /* common retry */
+      if (cfg->retry >= SEN_READ_RETRY_MAX)
+        cfg->cache_status = status;
+      else
+        cfg->retry++;
+
       return cfg->cache_status;
     }
   } else if (read_mode == get_from_cache) {

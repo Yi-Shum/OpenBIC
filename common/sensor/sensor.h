@@ -78,7 +78,8 @@ enum {
   SNR_UNSPECIFIED_ERROR,
   SNR_POLLING_DISABLE,
   SNR_PRE_READ_ERROR,
-  SNR_POST_READ_ERROR
+  SNR_POST_READ_ERROR,
+  SNR_READ_API_UNREGISTER
 };
 
 typedef struct _snr_cfg__ {
@@ -99,6 +100,7 @@ typedef struct _snr_cfg__ {
   void *init_args;
 
   /* if there is new parameter should be added, please add on above */
+  uint8_t retry;
   uint8_t (*init)(uint8_t, int *);
   uint8_t (*read)(uint8_t, int *);
 } snr_cfg;
