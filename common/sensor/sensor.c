@@ -201,7 +201,7 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
 
 void SNR_poll_handler(void *arug0, void *arug1, void *arug2) {
   uint8_t poll_num;
-  int reading, SNR_POLL_INTERVEL_ms;
+  int SNR_POLL_INTERVEL_ms;
   k_msleep(3000); // delay 3 second to wait for drivers ready before start sensor polling
 
   pal_set_sensor_poll_interval(&SNR_POLL_INTERVEL_ms);
@@ -211,6 +211,8 @@ void SNR_poll_handler(void *arug0, void *arug1, void *arug2) {
       if (SnrNum_SnrCfg_map[poll_num] == sensor_null) { // sensor not exist
         continue;
       }
+
+      int reading = 0;
       get_sensor_reading(poll_num, &reading, get_from_sensor);
 
       k_yield();
