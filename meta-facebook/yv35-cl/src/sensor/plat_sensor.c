@@ -7,6 +7,7 @@
 #include "plat_i2c.h"
 #include "plat_func.h"
 #include "pal.h"
+#include "plat_gpio.h"
 
 typedef struct _isl69254_pre_proc_arg {
   struct tca9548 *mux_conf; 
@@ -21,6 +22,8 @@ bool pre_tmp75_read(uint8_t snr_num, void *args);
 bool post_tmp75_read(uint8_t snr_num, void *args);
 bool pre_isl69254_read(uint8_t snr_num, void *args);
 bool pre_nvme_read(uint8_t snr_num, void *args);
+bool pre_ast_adc_read(uint8_t snr_num, void *args);
+bool post_ast_adc_read(uint8_t snr_num, void *args);
 
 /* Init flag */
 adc_asd_init_arg adc_asd_init_args[] = {
@@ -85,15 +88,15 @@ snr_cfg plat_sensor_config[] = {
   {SENSOR_NUM_PWR_CPU                , type_peci      , 0             , CPU_PECI_addr           , 0                  , post_access      , 0     , 0     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,                    NULL},
                                                                                                                                                                  
   // adc voltage                                                                                                                                                 
-  {SENSOR_NUM_VOL_STBY12V            , sen_dev_adc_asd, adc_port0     , 0                       , 0                  , stby_access      , 667   , 100   , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
-  {SENSOR_NUM_VOL_STBY3V             , sen_dev_adc_asd, adc_port2     , 0                       , 0                  , stby_access      , 2     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
-  {SENSOR_NUM_VOL_STBY1V05           , sen_dev_adc_asd, adc_port3     , 0                       , 0                  , stby_access      , 1     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
-  {SENSOR_NUM_VOL_BAT3V              , sen_dev_adc_asd, adc_port4     , 0                       , 0                  , stby_access      , 3     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
-  {SENSOR_NUM_VOL_STBY5V             , sen_dev_adc_asd, adc_port9     , 0                       , 0                  , stby_access      , 711   , 200   , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
-  {SENSOR_NUM_VOL_DIMM12V            , sen_dev_adc_asd, adc_port11    , 0                       , 0                  , DC_access        , 667   , 100   , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
-  {SENSOR_NUM_VOL_STBY1V2            , sen_dev_adc_asd, adc_port13    , 0                       , 0                  , stby_access      , 1     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
-  {SENSOR_NUM_VOL_M2_3V3             , sen_dev_adc_asd, adc_port14    , 0                       , 0                  , DC_access        , 2     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
-  {SENSOR_NUM_VOL_STBY1V8            , sen_dev_adc_asd, adc_port15    , 0                       , 0                  , stby_access      , 1     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_STBY12V            , sen_dev_ast_adc, adc_port0     , 0                       , 0                  , stby_access      , 667   , 100   , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_STBY3V             , sen_dev_ast_adc, adc_port2     , 0                       , 0                  , stby_access      , 2     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_STBY1V05           , sen_dev_ast_adc, adc_port3     , 0                       , 0                  , stby_access      , 1     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_BAT3V              , sen_dev_ast_adc, adc_port4     , 0                       , 0                  , stby_access      , 3     , 1     , 0      , SNR_INIT_STATUS,     pre_ast_adc_read,                         NULL,    post_ast_adc_read,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_STBY5V             , sen_dev_ast_adc, adc_port9     , 0                       , 0                  , stby_access      , 711   , 200   , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_DIMM12V            , sen_dev_ast_adc, adc_port11    , 0                       , 0                  , DC_access        , 667   , 100   , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_STBY1V2            , sen_dev_ast_adc, adc_port13    , 0                       , 0                  , stby_access      , 1     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_M2_3V3             , sen_dev_ast_adc, adc_port14    , 0                       , 0                  , DC_access        , 2     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
+  {SENSOR_NUM_VOL_STBY1V8            , sen_dev_ast_adc, adc_port15    , 0                       , 0                  , stby_access      , 1     , 1     , 0      , SNR_INIT_STATUS,                 NULL,                         NULL,                 NULL,                 NULL,   &adc_asd_init_args[0]},
 
   // VR voltage
   {SENSOR_NUM_VOL_PVCCD_HV           , sen_dev_isl69254, i2c_bus5      , PVCCD_HV_addr           , VR_VOL_CMD        , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS,    pre_isl69254_read,   &isl69254_pre_read_args[0],                 NULL,                 NULL,                    NULL},
@@ -217,6 +220,42 @@ bool pre_nvme_read(uint8_t snr_num, void *args)
 
   if ( i2c_master_write(&msg, retry) )
     return false;
+
+  return true;
+}
+
+/* ast adc pre read function
+ *
+ * set gpio high if sensor is "SENSOR_NUM_VOL_BAT3V"
+ *
+ * @param snr_num sensor number
+ * @param args pointer to NULL
+ * @retval true always.
+ * @retval false NULL
+ */
+bool pre_ast_adc_read(uint8_t snr_num, void *args)
+{
+  if( snr_num == SENSOR_NUM_VOL_BAT3V) {
+    gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_HIGH);
+    osDelay(1);
+  }
+
+  return true;
+}
+
+/* ast adc post read function
+ *
+ * set gpio low if sensor is "SENSOR_NUM_VOL_BAT3V"
+ *
+ * @param snr_num sensor number
+ * @param args pointer to NULL
+ * @retval true always.
+ * @retval false NULL
+ */
+bool post_ast_adc_read(uint8_t snr_num, void *args)
+{
+  if( snr_num == SENSOR_NUM_VOL_BAT3V)
+    gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_LOW);
 
   return true;
 }
