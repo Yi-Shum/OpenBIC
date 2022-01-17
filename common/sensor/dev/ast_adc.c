@@ -88,7 +88,8 @@ static bool adc_read_mv(uint8_t sensor_num, uint32_t index, uint32_t channel, in
   return true;
 }
 
-uint8_t ast_adc_read(uint8_t sensor_num, int *reading) {
+uint8_t ast_adc_read(uint8_t sensor_num, int *reading)
+{
   uint8_t snrcfg_sensor_num = SnrNum_SnrCfg_map[sensor_num];
   uint8_t chip = sensor_config[snrcfg_sensor_num].port / ADC_CHAN_NUM;
   uint8_t number = sensor_config[snrcfg_sensor_num].port % ADC_CHAN_NUM;

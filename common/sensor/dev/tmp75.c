@@ -3,7 +3,8 @@
 #include "hal_i2c.h"
 #include "pal.h"
 
-uint8_t tmp75_read(uint8_t sensor_num, int *reading) {
+uint8_t tmp75_read(uint8_t sensor_num, int *reading)
+{
   uint8_t retry = 5;
   I2C_MSG msg = {0};
 
