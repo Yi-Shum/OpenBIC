@@ -237,7 +237,7 @@ bool pre_ast_adc_read(uint8_t snr_num, void *args)
 {
   if( snr_num == SENSOR_NUM_VOL_BAT3V) {
     gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_HIGH);
-    osDelay(1);
+    k_msleep(1);
   }
 
   return true;
