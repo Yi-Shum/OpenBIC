@@ -41,11 +41,10 @@ uint8_t isl28022_read(uint8_t sensor_num, int* reading) {
   if (offset == ISL28022_BUS_VOLTAGE_REG) {
     /* unsigned */
     uint16_t read_mv;
-    uint8_t brng = ((init_arg->config >> 13) & BIT_MASK(2));
 
-    if ((brng == 0b11) || (brng == 0b10)) {
+    if ((init_arg->config.bit.BRNG == 0b11) || (init_arg->config.bit.BRNG == 0b10)) {
       read_mv = ((msg.data[0] << 6) | (msg.data[1] >> 2)) * 4;
-    } else if (brng == 0b01) {
+    } else if (init_arg->config.bit.BRNG == 0b01) {
       read_mv = ((msg.data[0] << 5) | (msg.data[1] >> 3)) * 4;
     } else {
       read_mv = (((msg.data[0] & BIT_MASK(7)) << 5) | (msg.data[1] >> 3)) * 4;
@@ -89,8 +88,8 @@ bool isl28022_init(uint8_t sensor_num) {
   msg.slave_addr = sensor_config[SnrNum_SnrCfg_map[sensor_num]].slave_addr;
   msg.tx_len = 3;
   msg.data[0] = ISL28022_CONFIG_REG;
-  msg.data[1] = (init_arg->config >> 8) & 0xFF;
-  msg.data[2] = init_arg->config & 0xFF;
+  msg.data[1] = (init_arg->config.value >> 8) & 0xFF;
+  msg.data[2] = init_arg->config.value & 0xFF;
   if (i2c_master_write(&msg, retry)) {
     printk("isl28022_init, set configuration register fail\n");
     return false;
@@ -99,9 +98,9 @@ bool isl28022_init(uint8_t sensor_num) {
   /* calculate and set calibration */
   uint16_t v_shunt_fs, adc_res, calibration;
 
-  v_shunt_fs = 40 << ((init_arg->config >> 11) & BIT_MASK(2));
-  if (!(init_arg->config & BIT(6)) && (((init_arg->config >> 3) & BIT_MASK(2)) < 3)) {
-    adc_res = 1 << (12 + ((init_arg->config >> 3) & BIT_MASK(2)));
+  v_shunt_fs = 40 << (init_arg->config.bit.PG);
+  if (!(init_arg->config.bit.SADC & BIT(3)) && ((init_arg->config.bit.SADC & BIT_MASK(2)) < 3)) {
+    adc_res = 1 << (12 + (init_arg->config.bit.SADC & BIT_MASK(2)));
   } else {
     adc_res = 32768;
   }

@@ -49,7 +49,17 @@ struct tca9548 {
 
 typedef struct _isl28022_init_arg {
   /* value to set configuration register */
-  uint16_t config;
+  union {
+    uint16_t value;
+    struct {
+      uint16_t MODE:3;
+      uint16_t SADC:4;
+      uint16_t BADC:4;
+      uint16_t PG:2;
+      uint16_t BRNG:2;
+      uint16_t RST:1;
+    } bit;
+  } config;
   /* R_shunt valus, unit: milliohm */
   uint32_t r_shunt;
 
