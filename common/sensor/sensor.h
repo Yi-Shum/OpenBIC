@@ -58,7 +58,7 @@ typedef struct _isl28022_init_arg {
       uint16_t PG:2;
       uint16_t BRNG:2;
       uint16_t RST:1;
-    } bit;
+    } fields;
   } config;
   /* R_shunt valus, unit: milliohm */
   uint32_t r_shunt;

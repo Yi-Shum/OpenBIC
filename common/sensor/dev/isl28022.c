@@ -42,9 +42,9 @@ uint8_t isl28022_read(uint8_t sensor_num, int* reading) {
     /* unsigned */
     uint16_t read_mv;
 
-    if ((init_arg->config.bit.BRNG == 0b11) || (init_arg->config.bit.BRNG == 0b10)) {
+    if ((init_arg->config.fields.BRNG == 0b11) || (init_arg->config.fields.BRNG == 0b10)) {
       read_mv = ((msg.data[0] << 6) | (msg.data[1] >> 2)) * 4;
-    } else if (init_arg->config.bit.BRNG == 0b01) {
+    } else if (init_arg->config.fields.BRNG == 0b01) {
       read_mv = ((msg.data[0] << 5) | (msg.data[1] >> 3)) * 4;
     } else {
       read_mv = (((msg.data[0] & BIT_MASK(7)) << 5) | (msg.data[1] >> 3)) * 4;
@@ -98,9 +98,9 @@ bool isl28022_init(uint8_t sensor_num) {
   /* calculate and set calibration */
   uint16_t v_shunt_fs, adc_res, calibration;
 
-  v_shunt_fs = 40 << (init_arg->config.bit.PG);
-  if (!(init_arg->config.bit.SADC & BIT(3)) && ((init_arg->config.bit.SADC & BIT_MASK(2)) < 3)) {
-    adc_res = 1 << (12 + (init_arg->config.bit.SADC & BIT_MASK(2)));
+  v_shunt_fs = 40 << (init_arg->config.fields.PG);
+  if (!(init_arg->config.fields.SADC & BIT(3)) && ((init_arg->config.fields.SADC & BIT_MASK(2)) < 3)) {
+    adc_res = 1 << (12 + (init_arg->config.fields.SADC & BIT_MASK(2)));
   } else {
     adc_res = 32768;
   }
