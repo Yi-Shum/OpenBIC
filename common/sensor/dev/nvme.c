@@ -10,6 +10,7 @@ uint8_t nvme_read(uint8_t sensor_num, int *reading)
 {
     uint8_t retry = 5;
     int val;
+    bool is_drive_ready;
     I2C_MSG msg;
 
     msg.bus = sensor_config[SnrNum_SnrCfg_map[sensor_num]].port;
@@ -19,6 +20,12 @@ uint8_t nvme_read(uint8_t sensor_num, int *reading)
     msg.rx_len = 4;
 
     if ( !i2c_master_read(&msg, retry) ) {
+        /* Check SSD drive ready */
+        is_drive_ready = ( ( msg.data[1] & 0x40 ) == 0 ? true : false );
+        if ( !is_drive_ready )
+            return SNR_NOT_ACCESSIBLE;
+
+        /* Check reading value */
         val = msg.data[3];
         if ( val == NVMe_NOT_AVAILABLE )
             return SNR_FAIL_TO_ACCESS;
