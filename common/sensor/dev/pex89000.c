@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
+#include "sensor.h"
+#include "hal_i2c.h"
 
 #define BRCM_I2C5_CMD_READ  0x4
 #define BRCM_I2C5_CMD_WRITE 0x3
@@ -15,6 +17,8 @@
 #define BRCM_TEMP_SNR0_STAT_REG0    0xFFE78538
 
 #define BRCM_TEMP_SNR0_CTL_REG1_RESET     0x000653E8
+
+#define TEMP 0xFE   // TBD: sensor offset
 
 static struct k_mutex brcm_pciesw;
 
@@ -89,11 +93,11 @@ static uint8_t set_axi_register_to_full_mode(uint8_t bus, uint8_t addr)
     msg.bus = bus;
     msg.slave_addr = addr;
     msg.tx_len = sizeof(data);
-    memcpy(&msg->data[0], data, sizeof(data));
+    memcpy(&msg.data[0], data, sizeof(data));
 
     if (i2c_master_write(&msg, retry)) {
         /* write fail */
-        printf("set AXI register to full mode failed!\n")
+        printf("set AXI register to full mode failed!\n");
         return 0;
     }
 
@@ -112,7 +116,7 @@ static uint8_t pex89000_i2c_read(uint8_t bus, uint8_t addr, uint32_t oft, uint8_
     msg.slave_addr = addr;
     msg.tx_len = sizeof(cmd);
     msg.rx_len = resp_len;
-    memcpy(&msg->data[0], &cmd, sizeof(cmd));
+    memcpy(&msg.data[0], &cmd, sizeof(cmd));
 
     if (i2c_master_read(&msg, retry)) {
         /* read fail */
@@ -120,7 +124,7 @@ static uint8_t pex89000_i2c_read(uint8_t bus, uint8_t addr, uint32_t oft, uint8_
         return 0;
     }
 
-    memcpy(resp, &msg->data[0], resp_len);
+    memcpy(resp, &msg.data[0], resp_len);
 
     return 1;
 }
@@ -143,7 +147,7 @@ static uint8_t pex89000_i2c_write(uint8_t bus, uint8_t addr, uint32_t oft, uint8
     msg.bus = bus;
     msg.slave_addr = addr;
     msg.tx_len = sizeof(cmd) + data_len;
-    memcpy(&msg->data[0], data_buf, sizeof(cmd) + data_len);
+    memcpy(&msg.data[0], data_buf, sizeof(cmd) + data_len);
 
     if (i2c_master_write(&msg, retry)) {
         /* write fail */
@@ -238,7 +242,7 @@ exit:
 
 uint8_t pex89000_die_temp(uint8_t bus, uint8_t addr, sen_val *val)
 {
-    if (!temp)
+    if (!val)
         return 0;
 
     uint8_t rc = 0;
@@ -267,7 +271,7 @@ uint8_t pex89000_die_temp(uint8_t bus, uint8_t addr, sen_val *val)
       }
 
       //Write 0xFFE78504 = 200653E8
-      if (!pex89000_chime_to_axi_write(bus, addr, BRCM_TEMP_SNR0_CTL_REG1, BRCM_SET_TEMP_CTL_REG1)){
+      if (!pex89000_chime_to_axi_write(bus, addr, BRCM_TEMP_SNR0_CTL_REG1, BRCM_TEMP_SNR0_CTL_REG1_RESET)){
           printf("CHIME to AXI Write 0xFFE78504 fail!\n");
           goto exit;
       }
@@ -294,7 +298,7 @@ uint8_t pex89000_read(uint8_t sensor_num, int* reading)
   
   switch(sensor_config[SnrNum_SnrCfg_map[sensor_num]].offset)
   {
-    case temp:
+    case TEMP:
       if(!pex89000_die_temp(sensor_config[SnrNum_SnrCfg_map[sensor_num]].port, sensor_config[SnrNum_SnrCfg_map[sensor_num]].slave_addr, (sen_val*)reading)) {
         printf("sensor pex89000_read read temp fail!\n");
         return SNR_FAIL_TO_ACCESS;
@@ -309,7 +313,7 @@ uint8_t pex89000_read(uint8_t sensor_num, int* reading)
   return SNR_READ_SUCCESS;
 }
 
-bool pex89000_init(uint8_t sensor_num)
+uint8_t pex89000_init(uint8_t sensor_num)
 {
   sensor_config[SnrNum_SnrCfg_map[sensor_num]].read = pex89000_read;
 

@@ -33,6 +33,7 @@ enum sen_dev {
   sen_dev_nvme = 0x05,
   sen_dev_mp5990 = 0x10,
   sen_dev_isl28022 = 0x11,
+  sen_dev_pex89000 = 0x12,
   sen_dev_max
 };
 
