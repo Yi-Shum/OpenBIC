@@ -32,6 +32,7 @@ SEN_DRIVE_INIT_DECLARE(isl69254);
 SEN_DRIVE_INIT_DECLARE(nvme);
 SEN_DRIVE_INIT_DECLARE(mp5990);
 SEN_DRIVE_INIT_DECLARE(isl28022);
+SEN_DRIVE_INIT_DECLARE(pex89000);
 
 struct sen_drive_api {
   enum sen_dev dev;
@@ -43,6 +44,7 @@ struct sen_drive_api {
   SEN_DRIVE_TYPE_INIT_MAP(nvme),
   SEN_DRIVE_TYPE_INIT_MAP(mp5990),
   SEN_DRIVE_TYPE_INIT_MAP(isl28022),
+  SEN_DRIVE_TYPE_INIT_MAP(pex89000),
 };
 
 static void init_SnrNum(void) {
