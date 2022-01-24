@@ -33,6 +33,7 @@ SEN_DRIVE_INIT_DECLARE(nvme);
 SEN_DRIVE_INIT_DECLARE(mp5990);
 SEN_DRIVE_INIT_DECLARE(isl28022);
 SEN_DRIVE_INIT_DECLARE(pex89000);
+SEN_DRIVE_INIT_DECLARE(intel_peci);
 
 struct sen_drive_api {
   enum sen_dev dev;
@@ -45,6 +46,7 @@ struct sen_drive_api {
   SEN_DRIVE_TYPE_INIT_MAP(mp5990),
   SEN_DRIVE_TYPE_INIT_MAP(isl28022),
   SEN_DRIVE_TYPE_INIT_MAP(pex89000),
+  SEN_DRIVE_TYPE_INIT_MAP(intel_peci),
 };
 
 static void init_SnrNum(void) {
@@ -179,7 +181,7 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
       }
 
       if (cfg->post_sen_read_hook) {
-        if (cfg->post_sen_read_hook(sensor_num, cfg->post_sen_read_args) == false) {
+        if (cfg->post_sen_read_hook(sensor_num, cfg->post_sen_read_args, reading) == false) {
           printf("sen %d post sensor read failed!\n", sensor_num);
           cfg->cache_status = SNR_POST_READ_ERROR;
           return SNR_POST_READ_ERROR;

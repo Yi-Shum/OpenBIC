@@ -4,7 +4,7 @@
 #include "sdr.h"
 #include "pmbus.h"
 
-#define sensor_poll_stack_size 1000
+#define sensor_poll_stack_size 2048
 
 #define get_from_sensor 0x00
 #define get_from_cache 0x01
@@ -29,6 +29,7 @@
 enum sen_dev {
   sen_dev_tmp75 = 0,
   sen_dev_ast_adc = 0x01,
+  sen_dev_intel_peci = 0x02,
   sen_dev_isl69254 = 0x03,
   sen_dev_nvme = 0x05,
   sen_dev_mp5990 = 0x10,
@@ -119,7 +120,7 @@ typedef struct _snr_cfg__ {
   uint8_t cache_status;
   bool (*pre_sen_read_hook)(uint8_t, void *);
   void *pre_sen_read_args;
-  bool (*post_sen_read_hook)(uint8_t, void *);
+  bool (*post_sen_read_hook)(uint8_t, void *, int *);
   void *post_sen_read_args;
   void *init_args;
 

@@ -61,7 +61,7 @@ isl69254_pre_proc_arg isl69254_pre_read_args[] =
  * @retval true if successful.
  * @retval false if fails.
  */
-bool pre_tmp75_read(uint8_t snr_num, void *args)
+bool pre_tmp75_read(uint8_t snr_num, void *args, int *reading)
 {
   uint8_t *val = (uint8_t *)args;
   printk("snr_num = %d, args = %d\n", snr_num, *val);
@@ -77,7 +77,7 @@ bool pre_tmp75_read(uint8_t snr_num, void *args)
  * @retval true if successful.
  * @retval false if fails.
  */
-bool post_tmp75_read(uint8_t snr_num, void *args)
+bool post_tmp75_read(uint8_t snr_num, void *args, int *reading)
 {
   uint8_t *val = (uint8_t *)args;
   printk("snr_num = %d, args = %d\n", snr_num, *val);
@@ -93,7 +93,7 @@ bool post_tmp75_read(uint8_t snr_num, void *args)
  * @retval true if setting mux and page is successful.
  * @retval false if setting mux or page fails.
  */
-bool pre_isl69254_read(uint8_t snr_num, void *args) {
+bool pre_isl69254_read(uint8_t snr_num, void *args, int *reading) {
   if (args == NULL) {
     return false;
   }
@@ -129,7 +129,7 @@ bool pre_isl69254_read(uint8_t snr_num, void *args) {
  * @retval true if setting mux is successful.
  * @retval false if setting mux fails.
  */
-bool pre_nvme_read(uint8_t snr_num, void *args)
+bool pre_nvme_read(uint8_t snr_num, void *args, int *reading)
 {
   struct tca9548 *pre_proc_args = (struct tca9548 *)args;
 
@@ -157,7 +157,7 @@ bool pre_nvme_read(uint8_t snr_num, void *args)
  * @retval true always.
  * @retval false NULL
  */
-bool pre_ast_adc_read(uint8_t snr_num, void *args)
+bool pre_ast_adc_read(uint8_t snr_num, void *args, int *reading)
 {
   if( snr_num == SENSOR_NUM_VOL_BAT3V) {
     gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_HIGH);
@@ -176,13 +176,26 @@ bool pre_ast_adc_read(uint8_t snr_num, void *args)
  * @retval true always.
  * @retval false NULL
  */
-bool post_ast_adc_read(uint8_t snr_num, void *args)
+bool post_ast_adc_read(uint8_t snr_num, void *args, int *reading)
 {
   if( snr_num == SENSOR_NUM_VOL_BAT3V)
     gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_LOW);
 
   return true;
 }
+
+bool post_cpu_margin_read(uint8_t snr_num, void *args, int *reading)
+{
+  if (!reading)
+    return false;
+
+  ARG_UNUSED(args);
+
+  sen_val *sval = (sen_val *)reading;
+  sval->integer = -sval->integer; /* for BMC minus */
+  return true;
+}
+
 
 /**************************************************************************************************
  *  ACCESS CHECK FUNC
