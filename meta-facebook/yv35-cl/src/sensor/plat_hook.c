@@ -42,7 +42,7 @@ struct tca9548 mux_conf_addr_0xe2[8] =
   [7] = {.addr = 0xe2, .chan = 7},
 };
 
-isl69254_pre_proc_arg isl69254_pre_read_args[] =
+isl69259_pre_proc_arg isl69259_pre_read_args[] =
 {
         /* mux_conf,                vr_page */
   [0] = { &mux_conf_addr_0xe2[6],      0x0},
@@ -89,21 +89,21 @@ bool post_tmp75_read(uint8_t snr_num, void *args, int *reading)
  * set mux and VR page
  *
  * @param snr_num sensor number
- * @param args pointer to isl69254_pre_proc_arg
+ * @param args pointer to isl69259_pre_proc_arg
  * @retval true if setting mux and page is successful.
  * @retval false if setting mux or page fails.
  */
-bool pre_isl69254_read(uint8_t snr_num, void *args, int *reading) {
+bool pre_isl69259_read(uint8_t snr_num, void *args, int *reading) {
   if (args == NULL) {
     return false;
   }
 
-  isl69254_pre_proc_arg *pre_proc_args = (isl69254_pre_proc_arg*)args;
+  isl69259_pre_proc_arg *pre_proc_args = (isl69259_pre_proc_arg*)args;
   uint8_t retry = 5;
   I2C_MSG msg;
 
   if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf) == false) {
-    printk("pre_isl69254_read, set mux fail\n");
+    printk("pre_isl69259_read, set mux fail\n");
     return false;
   }
 
@@ -114,7 +114,7 @@ bool pre_isl69254_read(uint8_t snr_num, void *args, int *reading) {
   msg.data[0] = 0x00;
   msg.data[1] = pre_proc_args->vr_page;
   if (i2c_master_write(&msg, retry)) {
-    printk("pre_isl69254_read, set page fail\n");
+    printk("pre_isl69259_read, set page fail\n");
     return false;
   }
   return true;

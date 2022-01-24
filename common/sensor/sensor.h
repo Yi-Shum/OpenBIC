@@ -30,7 +30,7 @@ enum sen_dev {
   sen_dev_tmp75 = 0,
   sen_dev_ast_adc = 0x01,
   sen_dev_intel_peci = 0x02,
-  sen_dev_isl69254 = 0x03,
+  sen_dev_isl69259 = 0x03,
   sen_dev_nvme = 0x05,
   sen_dev_mp5990 = 0x10,
   sen_dev_isl28022 = 0x11,
