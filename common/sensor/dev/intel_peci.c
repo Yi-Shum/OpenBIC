@@ -89,10 +89,12 @@ static bool get_cpu_temp(uint8_t addr, int *reading)
         return false;
 
     sen_val tjmax = {0};
-    get_cpu_tjmax(addr, (int *)&tjmax);
+    if (get_cpu_tjmax(addr, (int *)&tjmax) == false)
+        return false;
 
     sen_val margin = {0};
-    get_cpu_margin(addr, (int *)&margin);
+    if (get_cpu_margin(addr, (int *)&margin) == false)
+        return false;
 
     sen_val *sval = (sen_val *)reading;
     sval->integer = tjmax.integer + margin.integer;
@@ -132,10 +134,11 @@ uint8_t intel_peci_read(uint8_t sensor_num, int *reading)
     if (!reading)
         return SNR_UNSPECIFIED_ERROR;
 
+    bool ret_val = false;
     snr_cfg *cfg = &sensor_config[SnrNum_SnrCfg_map[sensor_num]];
     const uint8_t read_type = cfg->offset;
     if (read_type <= PECI_UNKNOWN || read_type >= PECI_MAX)
-        return false;
+        return SNR_NOT_FOUND;
 
     switch (read_type) {
     case PECI_TEMP_DIMM_A:
@@ -144,25 +147,25 @@ uint8_t intel_peci_read(uint8_t sensor_num, int *reading)
     case PECI_TEMP_DIMM_E:
     case PECI_TEMP_DIMM_G:
     case PECI_TEMP_DIMM_H:
-        get_dimm_temp(cfg->slave_addr, read_type, reading);
+        ret_val = get_dimm_temp(cfg->slave_addr, read_type, reading);
         break;
     case PECI_TEMP_CPU_MARGIN:
-        get_cpu_margin(cfg->slave_addr, reading);
+        ret_val = get_cpu_margin(cfg->slave_addr, reading);
         break;
     case PECI_TEMP_CPU_TJMAX:
-        get_cpu_tjmax(cfg->slave_addr, reading);
+        ret_val = get_cpu_tjmax(cfg->slave_addr, reading);
         break;
     case PECI_TEMP_CPU:
-        get_cpu_temp(cfg->slave_addr, reading);
+        ret_val = get_cpu_temp(cfg->slave_addr, reading);
         break;
     case PECI_PWR_CPU:
-        get_cpu_pwr(sensor_num, reading);
+        ret_val = get_cpu_pwr(sensor_num, reading);
         break;
     default:
         break;
     }
 
-    return SNR_READ_SUCCESS;
+    return ret_val ? SNR_READ_SUCCESS : SNR_FAIL_TO_ACCESS;
 }
 
 uint8_t intel_peci_init(uint8_t sensor_num)
