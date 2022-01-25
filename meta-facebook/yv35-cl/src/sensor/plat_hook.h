@@ -11,6 +11,7 @@ typedef struct _isl69259_pre_proc_arg {
  * INIT ARGS 
 **************************************************************************************************/
 extern adc_asd_init_arg adc_asd_init_args[];
+extern adm1278_init_arg adm1278_init_args[];
 
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK ARGS 

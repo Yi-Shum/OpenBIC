@@ -112,6 +112,9 @@ static bool adc_read_mv(uint8_t sensor_num, uint32_t index, uint32_t channel, in
 
 uint8_t ast_adc_read(uint8_t sensor_num, int *reading)
 {
+  if(!reading)
+    return SNR_UNSPECIFIED_ERROR;
+
   uint8_t snrcfg_sensor_num = SnrNum_SnrCfg_map[sensor_num];
   uint8_t chip = sensor_config[snrcfg_sensor_num].port / ADC_CHAN_NUM;
   uint8_t number = sensor_config[snrcfg_sensor_num].port % ADC_CHAN_NUM;

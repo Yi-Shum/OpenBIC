@@ -31,6 +31,7 @@ enum sen_dev {
   sen_dev_ast_adc = 0x01,
   sen_dev_intel_peci = 0x02,
   sen_dev_isl69259 = 0x03,
+  sen_dev_adm1278 = 0x04,
   sen_dev_nvme = 0x05,
   sen_dev_pch = 0x06,
   sen_dev_mp5990 = 0x10,
@@ -38,7 +39,6 @@ enum sen_dev {
   sen_dev_pex89000 = 0x12,
   sen_dev_max
 };
-
 
 typedef struct _sen_val {
   int16_t integer;
@@ -49,28 +49,6 @@ struct tca9548 {
   uint8_t addr;
   uint8_t chan;
 };
-
-typedef struct _isl28022_init_arg {
-  /* value to set configuration register */
-  union {
-    uint16_t value;
-    struct {
-      uint16_t MODE:3;
-      uint16_t SADC:4;
-      uint16_t BADC:4;
-      uint16_t PG:2;
-      uint16_t BRNG:2;
-      uint16_t RST:1;
-    } fields;
-  } config;
-  /* R_shunt valus, unit: milliohm */
-  uint32_t r_shunt;
-
-  /* Initailize function will set following arguments, no need to give value */
-  bool is_init;
-  /* used when read current/power */
-  float current_LSB;
-} isl28022_init_arg;
 
 static inline int acur_cal_MBR(uint8_t sensor_num, int val) { // for better accuracy, enlarge SDR to two byte scale
   if( SDR_M(sensor_num) == 0 ) {
@@ -132,9 +110,56 @@ typedef struct _snr_cfg__ {
 } snr_cfg;
 
 /* INIT arg */
+typedef struct _isl28022_init_arg {
+  /* value to set configuration register */
+  union {
+    uint16_t value;
+    struct {
+      uint16_t MODE:3;
+      uint16_t SADC:4;
+      uint16_t BADC:4;
+      uint16_t PG:2;
+      uint16_t BRNG:2;
+      uint16_t RST:1;
+    } fields;
+  } config;
+  /* R_shunt valus, unit: milliohm */
+  uint32_t r_shunt;
+
+  /* Initailize function will set following arguments, no need to give value */
+  bool is_init;
+  /* used when read current/power */
+  float current_LSB;
+} isl28022_init_arg;
+
 typedef struct _adc_asd_init_arg {
   bool is_init;
 } adc_asd_init_arg;
+
+typedef struct _adm1278_init_arg {
+  /* value to set configuration register */
+  union {
+    uint16_t value;
+    struct {
+      uint16_t RSV1:1;
+      uint16_t VOUT_EN:1;
+      uint16_t VIN_EN:1;
+      uint16_t TEMP1_EN:1;
+      uint16_t PMON_MODE:1;
+      uint16_t RSV2:3;
+      uint16_t VI_AVG:3;
+      uint16_t PWR_AVG:3;
+      uint16_t SIMULTANEOUS:1;
+      uint16_t TSFILT:1;
+    } fields;
+  } config;
+  /* Rsense valus, unit: milliohm */
+  float r_sense;
+
+  /* Initailize function will set following arguments, no need to give value */
+  bool is_init;
+
+} adm1278_init_arg;
 
 extern bool enable_sensor_poll;
 extern uint8_t SDR_NUM;

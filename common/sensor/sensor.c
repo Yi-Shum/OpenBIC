@@ -35,6 +35,7 @@ SEN_DRIVE_INIT_DECLARE(isl28022);
 SEN_DRIVE_INIT_DECLARE(pex89000);
 SEN_DRIVE_INIT_DECLARE(intel_peci);
 SEN_DRIVE_INIT_DECLARE(pch);
+SEN_DRIVE_INIT_DECLARE(adm1278);
 
 struct sen_drive_api {
   enum sen_dev dev;
@@ -49,6 +50,7 @@ struct sen_drive_api {
   SEN_DRIVE_TYPE_INIT_MAP(pex89000),
   SEN_DRIVE_TYPE_INIT_MAP(intel_peci),
   SEN_DRIVE_TYPE_INIT_MAP(pch),
+  SEN_DRIVE_TYPE_INIT_MAP(adm1278),
 };
 
 static void init_SnrNum(void) {

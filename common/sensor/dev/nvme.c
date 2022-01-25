@@ -8,6 +8,9 @@
 
 uint8_t nvme_read(uint8_t sensor_num, int *reading)
 {
+  if (!reading)
+    return SNR_UNSPECIFIED_ERROR;
+
   uint8_t retry = 5;
   int val;
   bool is_drive_ready;

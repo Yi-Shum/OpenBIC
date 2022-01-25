@@ -76,13 +76,13 @@ snr_cfg plat_sensor_config[] = {
   {SENSOR_NUM_PWR_PVCCFA_EHV_FIVRA   , sen_dev_isl69259     , i2c_bus5      , PVCCFA_EHV_FIVRA_addr   , VR_PWR_CMD           , DC_access        , 0     , 0     , 0      , SNR_INIT_STATUS    , pre_isl69259_read   , &isl69259_pre_read_args[1]  , NULL                  , NULL                      , NULL                  },
   
   // ME
-  {SENSOR_NUM_TEMP_PCH               , sen_dev_pch          , i2c_bus3      , PCH_addr                , PCH_TEMP_SNR_NUM     , post_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                      , NULL                  },
+  {SENSOR_NUM_TEMP_PCH               , sen_dev_pch          , i2c_bus3      , PCH_addr                , PCH_TEMP_SNR_NUM     , post_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                     , NULL                  },
   
   // HSC
-  {SENSOR_NUM_TEMP_HSC               , type_hsc             , i2c_bus2      , HSC_addr                , HSC_TEMP_CMD         , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                      , NULL                  },
-  {SENSOR_NUM_VOL_HSCIN              , type_hsc             , i2c_bus2      , HSC_addr                , HSC_VOL_CMD          , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                      , NULL                  },
-  {SENSOR_NUM_CUR_HSCOUT             , type_hsc             , i2c_bus2      , HSC_addr                , HSC_CUR_CMD          , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                      , NULL                  },
-  {SENSOR_NUM_PWR_HSCIN              , type_hsc             , i2c_bus2      , HSC_addr                , HSC_PWR_CMD          , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                      , NULL                  },
+  {SENSOR_NUM_TEMP_HSC               , sen_dev_adm1278      , i2c_bus2      , HSC_addr                , HSC_TEMP_CMD         , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                     , &adm1278_init_args[0] },
+  {SENSOR_NUM_VOL_HSCIN              , sen_dev_adm1278      , i2c_bus2      , HSC_addr                , HSC_VOL_CMD          , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                     , &adm1278_init_args[0] },
+  {SENSOR_NUM_CUR_HSCOUT             , sen_dev_adm1278      , i2c_bus2      , HSC_addr                , HSC_CUR_CMD          , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                     , &adm1278_init_args[0] },
+  {SENSOR_NUM_PWR_HSCIN              , sen_dev_adm1278      , i2c_bus2      , HSC_addr                , HSC_PWR_CMD          , stby_access      , 0     , 0     , 0      , SNR_INIT_STATUS    , NULL                , NULL                         , NULL                  , NULL                     , &adm1278_init_args[0] },
 };
 
 snr_cfg fix_C2Snrconfig_table[] = {
