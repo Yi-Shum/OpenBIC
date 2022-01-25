@@ -24,7 +24,7 @@ uint8_t isl69259_read(uint8_t sensor_num, int* reading) {
     /* read fail */
     return SNR_FAIL_TO_ACCESS;
   }
-  
+
   uint8_t offset = sensor_config[SnrNum_SnrCfg_map[sensor_num]].offset;
   if (offset == PMBUS_READ_VOUT) {
     /* 1 mV/LSB, unsigned integer */

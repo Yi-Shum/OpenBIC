@@ -61,7 +61,7 @@ isl69259_pre_proc_arg isl69259_pre_read_args[] =
  * @retval true if successful.
  * @retval false if fails.
  */
-bool pre_tmp75_read(uint8_t snr_num, void *args, int *reading)
+bool pre_tmp75_read(uint8_t snr_num, void *args)
 {
   uint8_t *val = (uint8_t *)args;
   printk("snr_num = %d, args = %d\n", snr_num, *val);
@@ -93,7 +93,7 @@ bool post_tmp75_read(uint8_t snr_num, void *args, int *reading)
  * @retval true if setting mux and page is successful.
  * @retval false if setting mux or page fails.
  */
-bool pre_isl69259_read(uint8_t snr_num, void *args, int *reading) {
+bool pre_isl69259_read(uint8_t snr_num, void *args) {
   if (args == NULL) {
     return false;
   }
@@ -102,10 +102,10 @@ bool pre_isl69259_read(uint8_t snr_num, void *args, int *reading) {
   uint8_t retry = 5;
   I2C_MSG msg;
 
-  if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf) == false) {
-    printk("pre_isl69259_read, set mux fail\n");
-    return false;
-  }
+  // if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf) == false) {
+  //   printk("pre_isl69259_read, set mux fail\n");
+  //   return false;
+  // }
 
   /* set page */
   msg.bus = sensor_config[SnrNum_SnrCfg_map[snr_num]].port;
@@ -129,7 +129,7 @@ bool pre_isl69259_read(uint8_t snr_num, void *args, int *reading) {
  * @retval true if setting mux is successful.
  * @retval false if setting mux fails.
  */
-bool pre_nvme_read(uint8_t snr_num, void *args, int *reading)
+bool pre_nvme_read(uint8_t snr_num, void *args)
 {
   struct tca9548 *pre_proc_args = (struct tca9548 *)args;
 
@@ -157,7 +157,7 @@ bool pre_nvme_read(uint8_t snr_num, void *args, int *reading)
  * @retval true always.
  * @retval false NULL
  */
-bool pre_ast_adc_read(uint8_t snr_num, void *args, int *reading)
+bool pre_ast_adc_read(uint8_t snr_num, void *args)
 {
   if( snr_num == SENSOR_NUM_VOL_BAT3V) {
     gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_HIGH);

@@ -23,11 +23,11 @@ extern isl69259_pre_proc_arg isl69259_pre_read_args[];
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK FUNC
  **************************************************************************************************/
-bool pre_tmp75_read(uint8_t snr_num, void *args, int *reading);
+bool pre_tmp75_read(uint8_t snr_num, void *args);
 bool post_tmp75_read(uint8_t snr_num, void *args, int *reading);
-bool pre_isl69259_read(uint8_t snr_num, void *args, int *reading);
-bool pre_nvme_read(uint8_t snr_num, void *args, int *reading);
-bool pre_ast_adc_read(uint8_t snr_num, void *args, int *reading);
+bool pre_isl69259_read(uint8_t snr_num, void *args);
+bool pre_nvme_read(uint8_t snr_num, void *args);
+bool pre_ast_adc_read(uint8_t snr_num, void *args);
 bool post_ast_adc_read(uint8_t snr_num, void *args, int *reading);
 bool post_cpu_margin_read(uint8_t snr_num, void *args, int *reading);
 

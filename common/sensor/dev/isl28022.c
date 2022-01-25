@@ -68,7 +68,7 @@ uint8_t isl28022_read(uint8_t sensor_num, int* reading) {
   return SNR_READ_SUCCESS;
 }
 
-bool isl28022_init(uint8_t sensor_num) {
+uint8_t isl28022_init(uint8_t sensor_num) {
   if (sensor_config[SnrNum_SnrCfg_map[sensor_num]].init_args == NULL) {
     printk("isl28022_init: init_arg is NULL\n");
     return false;
