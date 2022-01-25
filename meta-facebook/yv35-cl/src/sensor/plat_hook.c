@@ -15,7 +15,7 @@ adc_asd_init_arg adc_asd_init_args[] = {
 };
 
 adm1278_init_arg adm1278_init_args[] = {
-  [0] = {.is_init = false, .config = 0x3F1C, .r_sense = 2.5}
+  [0] = {.is_init = false, .config = {0x3F1C}, .r_sense = 0.25}
 };
 
 /**************************************************************************************************
