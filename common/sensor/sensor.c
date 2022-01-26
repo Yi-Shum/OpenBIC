@@ -7,6 +7,8 @@
 #include "sensor.h"
 #include "sensor_def.h"
 
+#define _4BYTE_ACCURACY 0
+
 #define SEN_DRIVE_INIT_DECLARE(name) \
   uint8_t name##_init(uint8_t snr_num)
 
@@ -88,69 +90,22 @@ bool access_check(uint8_t sensor_num) {
   return (access_checker)(sensor_config[SnrNum_SnrCfg_map[sensor_num]].num);
 }
 
-bool sensor_read(uint8_t sensor_num, int *reading) {
-  int status;
-  switch(sensor_config[SnrNum_SnrCfg_map[sensor_num]].type){
-    case type_tmp75:
-      status = tmp75_read(sensor_num, reading);
-      if (status)
-        return true;
-      break;
-    case type_adc:
-      status = pal_adc_read(sensor_num, reading);
-      if (status)
-        return true;
-      break;
-    case type_peci:
-      status = pal_peci_read(sensor_num, reading);
-      if (status)
-        return true;
-      break;
-    case type_vr:
-      status = pal_vr_read(sensor_num, reading);
-      if (status)
-        return true;
-      break;
-    case type_pch:
-      status = pal_pch_read(sensor_num, reading);
-      if (status)
-        return true;
-      break;
-    case type_hsc:
-      status = pal_hsc_read(sensor_num, reading);
-      if (status)
-        return true;
-      break;
-    case type_nvme:
-      status = pal_nvme_read(sensor_num, reading);
-      if (status)
-        return true;
-      break;
-
-    default:
-      printf("sensor_read with unexpected sensor type\n");
-      return false;
-      break;
-  }
-  return false;
-}
-
+#if !_4BYTE_ACCURACY
 static bool cal_mbr(uint8_t snr_num, int *reading)
 {
   if (!reading || (SnrNum_SDR_map[snr_num] == 0xFF))
     return false;
 
-  /* TODO: handle fraction */
   sen_val *sval = (sen_val *)reading;
   float f = sval->integer + (float)sval->fraction / 1000;
   
   int cache = (int)(f * SDR_Rexp(snr_num) / (SDR_M(snr_num) ? SDR_M(snr_num) : 1));
 
-  // int cache = cal_MBR(snr_num, sval->integer) & 0xff;
   sensor_config[SnrNum_SnrCfg_map[snr_num]].cache = cache;
   sensor_config[SnrNum_SnrCfg_map[snr_num]].cache_status = SNR_READ_SUCCESS;
   return true;
 }
+#endif
 
 uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) {
   if(SnrNum_SDR_map[sensor_num] == 0xFF) { // look for sensor in SDR table
@@ -187,7 +142,12 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
           return SNR_POST_READ_ERROR;
         }
       }
+#if _4BYTE_ACCURACY
+      memcpy(&cfg->cache, reading, sizeof(*reading));
+      status = SNR_READ_4BYTE_ACUR_SUCCESS;
+#else
       cal_mbr(sensor_num, reading);
+#endif
       cfg->cache_status = status;
       return cfg->cache_status;
     } else {
@@ -201,8 +161,14 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode) 
     }
   } else if (read_mode == get_from_cache) {
     if (cfg->cache_status == SNR_READ_SUCCESS
-        || cfg->cache_status == SNR_READ_ACUR_SUCCESS) {
-      *reading = cfg->cache;
+        || cfg->cache_status == SNR_READ_ACUR_SUCCESS
+        || cfg->cache_status == SNR_READ_4BYTE_ACUR_SUCCESS) {
+      
+      if (cfg->cache_status == SNR_READ_4BYTE_ACUR_SUCCESS)
+        memcpy(reading, &cfg->cache, sizeof(cfg->cache));
+      else
+        *reading = cfg->cache;
+
       if( !access_check(sensor_num) ) { // double check access to avoid not accessible read at same moment status change
         return SNR_NOT_ACCESSIBLE;
       }
