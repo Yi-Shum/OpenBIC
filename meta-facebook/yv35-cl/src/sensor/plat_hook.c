@@ -14,6 +14,10 @@ adc_asd_init_arg adc_asd_init_args[] = {
   [0] = {.is_init = false}
 };
 
+adm1278_init_arg adm1278_init_args[] = {
+  [0] = {.is_init = false, .config = {0x3F1C}, .r_sense = 0.25}
+};
+
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK ARGS 
  **************************************************************************************************/
@@ -42,7 +46,7 @@ struct tca9548 mux_conf_addr_0xe2[8] =
   [7] = {.addr = 0xe2, .chan = 7},
 };
 
-isl69254_pre_proc_arg isl69254_pre_read_args[] =
+isl69259_pre_proc_arg isl69259_pre_read_args[] =
 {
         /* mux_conf,                vr_page */
   [0] = { &mux_conf_addr_0xe2[6],      0x0},
@@ -58,11 +62,15 @@ isl69254_pre_proc_arg isl69254_pre_read_args[] =
  *
  * @param snr_num sensor number
  * @param args pointer to ?
+ * @param reading pointer to reading from previous step
  * @retval true if successful.
  * @retval false if fails.
  */
-bool pre_tmp75_read(uint8_t snr_num, void *args, int *reading)
+bool pre_tmp75_read(uint8_t snr_num, void *args)
 {
+  if (!args)
+    return false;
+
   uint8_t *val = (uint8_t *)args;
   printk("snr_num = %d, args = %d\n", snr_num, *val);
   return true;
@@ -74,11 +82,16 @@ bool pre_tmp75_read(uint8_t snr_num, void *args, int *reading)
  *
  * @param snr_num sensor number
  * @param args pointer to ?
+ * @param reading pointer to reading from previous step
  * @retval true if successful.
  * @retval false if fails.
  */
 bool post_tmp75_read(uint8_t snr_num, void *args, int *reading)
 {
+  if (!args)
+    return false;
+  ARG_UNUSED(reading);
+
   uint8_t *val = (uint8_t *)args;
   printk("snr_num = %d, args = %d\n", snr_num, *val);
   return true;
@@ -89,23 +102,24 @@ bool post_tmp75_read(uint8_t snr_num, void *args, int *reading)
  * set mux and VR page
  *
  * @param snr_num sensor number
- * @param args pointer to isl69254_pre_proc_arg
+ * @param args pointer to isl69259_pre_proc_arg
+ * @param reading pointer to reading from previous step
  * @retval true if setting mux and page is successful.
  * @retval false if setting mux or page fails.
  */
-bool pre_isl69254_read(uint8_t snr_num, void *args, int *reading) {
+bool pre_isl69259_read(uint8_t snr_num, void *args) {
   if (args == NULL) {
     return false;
   }
 
-  isl69254_pre_proc_arg *pre_proc_args = (isl69254_pre_proc_arg*)args;
+  isl69259_pre_proc_arg *pre_proc_args = (isl69259_pre_proc_arg*)args;
   uint8_t retry = 5;
   I2C_MSG msg;
 
-  if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf) == false) {
-    printk("pre_isl69254_read, set mux fail\n");
-    return false;
-  }
+  // if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf) == false) {
+  //   printk("pre_isl69259_read, set mux fail\n");
+  //   return false;
+  // }
 
   /* set page */
   msg.bus = sensor_config[SnrNum_SnrCfg_map[snr_num]].port;
@@ -114,7 +128,7 @@ bool pre_isl69254_read(uint8_t snr_num, void *args, int *reading) {
   msg.data[0] = 0x00;
   msg.data[1] = pre_proc_args->vr_page;
   if (i2c_master_write(&msg, retry)) {
-    printk("pre_isl69254_read, set page fail\n");
+    printk("pre_isl69259_read, set page fail\n");
     return false;
   }
   return true;
@@ -126,11 +140,15 @@ bool pre_isl69254_read(uint8_t snr_num, void *args, int *reading) {
  *
  * @param snr_num sensor number
  * @param args pointer to struct tca9548
+ * @param reading pointer to reading from previous step
  * @retval true if setting mux is successful.
  * @retval false if setting mux fails.
  */
-bool pre_nvme_read(uint8_t snr_num, void *args, int *reading)
+bool pre_nvme_read(uint8_t snr_num, void *args)
 {
+  if (!args)
+    return false;
+
   struct tca9548 *pre_proc_args = (struct tca9548 *)args;
 
   uint8_t retry = 5;
@@ -154,11 +172,14 @@ bool pre_nvme_read(uint8_t snr_num, void *args, int *reading)
  *
  * @param snr_num sensor number
  * @param args pointer to NULL
+ * @param reading pointer to reading from previous step
  * @retval true always.
  * @retval false NULL
  */
-bool pre_ast_adc_read(uint8_t snr_num, void *args, int *reading)
+bool pre_ast_adc_read(uint8_t snr_num, void *args)
 {
+  ARG_UNUSED(args);
+
   if( snr_num == SENSOR_NUM_VOL_BAT3V) {
     gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_HIGH);
     k_msleep(1);
@@ -173,29 +194,42 @@ bool pre_ast_adc_read(uint8_t snr_num, void *args, int *reading)
  *
  * @param snr_num sensor number
  * @param args pointer to NULL
+ * @param reading pointer to reading from previous step
  * @retval true always.
  * @retval false NULL
  */
 bool post_ast_adc_read(uint8_t snr_num, void *args, int *reading)
 {
+  ARG_UNUSED(args);
+  ARG_UNUSED(reading);
+
   if( snr_num == SENSOR_NUM_VOL_BAT3V)
     gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_LOW);
 
   return true;
 }
 
+/* INTEL PECI post read function
+ *
+ * modify certain sensor value after reading
+ *
+ * @param snr_num sensor number
+ * @param args pointer to NULL
+ * @param reading pointer to reading from previous step
+ * @retval true if no error
+ * @retval false if reading get NULL
+ */
+
 bool post_cpu_margin_read(uint8_t snr_num, void *args, int *reading)
 {
   if (!reading)
     return false;
-
   ARG_UNUSED(args);
 
   sen_val *sval = (sen_val *)reading;
   sval->integer = -sval->integer; /* for BMC minus */
   return true;
 }
-
 
 /**************************************************************************************************
  *  ACCESS CHECK FUNC
