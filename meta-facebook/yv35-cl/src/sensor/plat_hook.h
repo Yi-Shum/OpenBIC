@@ -2,7 +2,6 @@
 #define PLAT_HOOK_H
 
 typedef struct _isl69259_pre_proc_arg {
-  struct tca9548 *mux_conf; 
   /* vr page to set */
   uint8_t vr_page;
 } isl69259_pre_proc_arg;
@@ -16,20 +15,16 @@ extern adm1278_init_arg adm1278_init_args[];
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK ARGS 
  **************************************************************************************************/
-extern uint8_t tmp75_test[];
-extern struct tca9548 mux_conf_addr_0xe0[];
 extern struct tca9548 mux_conf_addr_0xe2[];
 extern isl69259_pre_proc_arg isl69259_pre_read_args[];
 
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK FUNC
  **************************************************************************************************/
-bool pre_tmp75_read(uint8_t snr_num, void *args);
-bool post_tmp75_read(uint8_t snr_num, void *args, int *reading);
 bool pre_isl69259_read(uint8_t snr_num, void *args);
 bool pre_nvme_read(uint8_t snr_num, void *args);
-bool pre_ast_adc_read(uint8_t snr_num, void *args);
-bool post_ast_adc_read(uint8_t snr_num, void *args, int *reading);
+bool pre_vol_bat3v_read(uint8_t snr_num, void *args);
+bool post_vol_bat3v_read(uint8_t snr_num, void *args, int *reading);
 bool post_cpu_margin_read(uint8_t snr_num, void *args, int *reading);
 
 /**************************************************************************************************

@@ -21,19 +21,6 @@ adm1278_init_arg adm1278_init_args[] = {
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK ARGS 
  **************************************************************************************************/
-uint8_t tmp75_test[] = {62, 93};
-
-struct tca9548 mux_conf_addr_0xe0[8] =
-{
-  [0] = {.addr = 0xe0, .chan = 0},
-  [1] = {.addr = 0xe0, .chan = 1},
-  [2] = {.addr = 0xe0, .chan = 2},
-  [3] = {.addr = 0xe0, .chan = 3},
-  [4] = {.addr = 0xe0, .chan = 4},
-  [5] = {.addr = 0xe0, .chan = 5},
-  [6] = {.addr = 0xe0, .chan = 6},
-  [7] = {.addr = 0xe0, .chan = 7},
-};
 struct tca9548 mux_conf_addr_0xe2[8] =
 {
   [0] = {.addr = 0xe2, .chan = 0},
@@ -48,55 +35,13 @@ struct tca9548 mux_conf_addr_0xe2[8] =
 
 isl69259_pre_proc_arg isl69259_pre_read_args[] =
 {
-        /* mux_conf,                vr_page */
-  [0] = { &mux_conf_addr_0xe2[6],      0x0},
-  [1] = { &mux_conf_addr_0xe2[6],      0x1},
+  [0] = { 0x0 },
+  [1] = { 0x1 },
 };
 
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK FUNC
  **************************************************************************************************/
-/* TMP75 pre read function
- *
- * Demo
- *
- * @param snr_num sensor number
- * @param args pointer to ?
- * @param reading pointer to reading from previous step
- * @retval true if successful.
- * @retval false if fails.
- */
-bool pre_tmp75_read(uint8_t snr_num, void *args)
-{
-  if (!args)
-    return false;
-
-  uint8_t *val = (uint8_t *)args;
-  printk("snr_num = %d, args = %d\n", snr_num, *val);
-  return true;
-}
-
-/* TMP75 post read function
- *
- * Demo
- *
- * @param snr_num sensor number
- * @param args pointer to ?
- * @param reading pointer to reading from previous step
- * @retval true if successful.
- * @retval false if fails.
- */
-bool post_tmp75_read(uint8_t snr_num, void *args, int *reading)
-{
-  if (!args)
-    return false;
-  ARG_UNUSED(reading);
-
-  uint8_t *val = (uint8_t *)args;
-  printk("snr_num = %d, args = %d\n", snr_num, *val);
-  return true;
-}
-
 /* ISL6925 pre read function
  *
  * set mux and VR page
@@ -115,11 +60,6 @@ bool pre_isl69259_read(uint8_t snr_num, void *args) {
   isl69259_pre_proc_arg *pre_proc_args = (isl69259_pre_proc_arg*)args;
   uint8_t retry = 5;
   I2C_MSG msg;
-
-  // if (tca9548_select_chan(snr_num, pre_proc_args->mux_conf) == false) {
-  //   printk("pre_isl69259_read, set mux fail\n");
-  //   return false;
-  // }
 
   /* set page */
   msg.bus = sensor_config[SnrNum_SnrCfg_map[snr_num]].port;
@@ -176,7 +116,7 @@ bool pre_nvme_read(uint8_t snr_num, void *args)
  * @retval true always.
  * @retval false NULL
  */
-bool pre_ast_adc_read(uint8_t snr_num, void *args)
+bool pre_vol_bat3v_read(uint8_t snr_num, void *args)
 {
   ARG_UNUSED(args);
 
@@ -198,7 +138,7 @@ bool pre_ast_adc_read(uint8_t snr_num, void *args)
  * @retval true always.
  * @retval false NULL
  */
-bool post_ast_adc_read(uint8_t snr_num, void *args, int *reading)
+bool post_vol_bat3v_read(uint8_t snr_num, void *args, int *reading)
 {
   ARG_UNUSED(args);
   ARG_UNUSED(reading);
