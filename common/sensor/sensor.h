@@ -162,15 +162,6 @@ typedef struct _adm1278_init_arg {
 
 } adm1278_init_arg;
 
-typedef struct _pex89000_init_arg {
-  uint8_t idx;
-  struct k_mutex brcm_pciesw;
-
-  /* Initailize function will set following arguments, no need to give value */
-  bool is_init;
-
-} pex89000_init_arg;
-
 extern bool enable_sensor_poll;
 extern uint8_t SDR_NUM;
 extern snr_cfg *sensor_config;
