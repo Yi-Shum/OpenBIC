@@ -106,6 +106,7 @@ typedef struct _snr_cfg__ {
 
   /* if there is new parameter should be added, please add on above */
   uint8_t retry;
+  void *priv_data;
   uint8_t (*init)(uint8_t, int *);
   uint8_t (*read)(uint8_t, int *);
 } snr_cfg;
@@ -161,6 +162,11 @@ typedef struct _adm1278_init_arg {
   bool is_init;
 
 } adm1278_init_arg;
+
+typedef struct _pex89000_init_arg {
+  uint8_t idx;
+  bool is_init;
+} pex89000_init_arg;
 
 extern bool enable_sensor_poll;
 extern uint8_t SDR_NUM;
