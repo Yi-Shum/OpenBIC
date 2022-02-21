@@ -66,19 +66,19 @@
   clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&i2c6 {
-	pinctrl-0 = <&pinctrl_i2c6_default>;
-  clock-frequency = <I2C_BITRATE_FAST>;
-	status = "okay";
+// &i2c6 {
+// 	pinctrl-0 = <&pinctrl_i2c6_default>;
+//   clock-frequency = <I2C_BITRATE_FAST>;
+// 	status = "okay";
 
-	ipmb6: ipmb@20 {
-		compatible = "aspeed,ipmb";
-		reg = <0x20>;
-		label = "IPMB_6";
-		size = <10>;
-		status = "okay";
-	};
-};
+// 	ipmb6: ipmb@20 {
+// 		compatible = "aspeed,ipmb";
+// 		reg = <0x20>;
+// 		label = "IPMB_6";
+// 		size = <10>;
+// 		status = "okay";
+// 	};
+// };
 
 &i2c7 {
 	pinctrl-0 = <&pinctrl_i2c7_default>;
@@ -236,4 +236,24 @@
 
 &wdt4 {
 	status = "okay";
+};
+
+&i3c_gr {
+	status = "okay";
+	pull-up-resistor-ohm = <2000>, <2000>, <2000>, <2000>;
+};
+
+&i3c0 {
+	status = "okay";
+	assigned-address = <0x20>;
+	secondary;
+	i3c0_smq:i3c-slave-mqueue@20 {
+		compatible = "aspeed,i3c-slave-mqueue";
+		reg = <0x20>;
+		msg-size = <256>;
+		num-of-msgs = <8>;
+		mandatory-data-byte = <0xbf>;
+		label = "I3C_0_SMQ";
+		status = "okay";
+	};
 };
