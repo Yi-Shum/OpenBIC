@@ -104,6 +104,7 @@ typedef struct _sensor_cfg__ {
 
 	/* if there is new parameter should be added, please add on above */
 	uint8_t retry;
+	void *priv_data;
 	uint8_t (*init)(uint8_t, int *);
 	uint8_t (*read)(uint8_t, int *);
 } sensor_cfg;
@@ -111,6 +112,7 @@ typedef struct _sensor_cfg__ {
 /* INIT arg */
 typedef struct _isl28022_init_arg {
 	/* value to set configuration register */
+	uint8_t index;
 	union {
 		uint16_t value;
 		struct {
@@ -127,8 +129,6 @@ typedef struct _isl28022_init_arg {
 
 	/* Initailize function will set following arguments, no need to give value */
 	bool is_init;
-	/* used when read current/power */
-	float current_LSB;
 } isl28022_init_arg;
 
 typedef struct _adc_asd_init_arg {
