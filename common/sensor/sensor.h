@@ -136,6 +136,8 @@ typedef struct _adc_asd_init_arg {
 } adc_asd_init_arg;
 
 typedef struct _adm1278_init_arg {
+	/* index from init_arg setting list (NOTE: every setting should have unique index) */
+	uint8_t index;
 	/* value to set configuration register */
 	union {
 		uint16_t value;
@@ -157,7 +159,6 @@ typedef struct _adm1278_init_arg {
 
 	/* Initailize function will set following arguments, no need to give value */
 	bool is_init;
-
 } adm1278_init_arg;
 
 typedef struct _pex89000_init_arg {
