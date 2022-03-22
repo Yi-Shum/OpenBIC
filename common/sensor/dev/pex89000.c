@@ -4,25 +4,7 @@
 #include <string.h>
 #include "sensor.h"
 #include "hal_i2c.h"
-
-#define BRCM_I2C5_CMD_READ 0b100
-#define BRCM_I2C5_CMD_WRITE 0b011
-
-#define BRCM_I2C5_ACCESS_MODE_FULL 2
-#define BRCM_I2C5_ACCESS_MODE_LOWER18 0
-
-#define BRCM_CHIME_AXI_CSR_ADDR 0x001F0100
-#define BRCM_CHIME_AXI_CSR_DATA 0x001F0104
-#define BRCM_CHIME_AXI_CSR_CTL 0x001F0108
-
-#define BRCM_TEMP_SENSOR0_CTL_REG1 0xFFE78504
-#define BRCM_TEMP_SENSOR0_STAT_REG0 0xFFE78538
-
-#define BRCM_TEMP_SENSOR0_CTL_REG1_RESET 0x000653E8
-
-#define BRCM_FULL_ADDR_BIT 0x007C0000 // bits[22:18]
-
-#define TEMP 0xFE // TBD: sensor offset
+#include "pex89000.h"
 
 typedef struct {
 	uint8_t oft9_2bit : 8;
@@ -297,7 +279,7 @@ uint8_t pex89000_read(uint8_t sensor_num, int *reading)
 	}
 
 	switch (sensor_config[SensorNum_SensorCfg_map[sensor_num]].offset) {
-	case TEMP:
+	case PEX89000_TEMP_OFFSET:
 		if (pex89000_die_temp(sensor_config[SensorNum_SensorCfg_map[sensor_num]].port,
 				      sensor_config[SensorNum_SensorCfg_map[sensor_num]].slave_addr,
 				      (sensor_val *)reading)) {

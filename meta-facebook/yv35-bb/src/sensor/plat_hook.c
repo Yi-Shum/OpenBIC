@@ -14,13 +14,18 @@
 /**************************************************************************************************
  * INIT ARGS
 **************************************************************************************************/
-adc_asd_init_arg adc_asd_init_args[] = { [0] = { .is_init = false } };
+ast_adc_init_arg ast_adc_init_args[] = { [0] = { .is_init = false } };
 
-adm1278_init_arg adm1278_init_args[] = {
-	[0] = { .is_init = false, .config = { 0x3F1C }, .r_sense = 0.25 }
+adm1278_init_arg adm1278_init_args[] = { [0] = { .ID = 0, .config = { 0x3F1C }, .r_sense = 0.25 } };
+
+ltc4282_init_arg ltc4282_init_args[] = { [0] = { .ID = 0, .r_sense = 0.0001875 } };
+
+ast_adc_post_proc_arg ast_adc_post_args[] = {
+	[0] = { 3.68 },
+	[1] = { 8.9 },
+	[2] = { 2.435 },
+	[3] = { 1 },
 };
-
-ltc4282_init_arg ltc4282_init_args[] = { [0] = { .r_sense = 0.0001875 } };
 
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK ARGS
@@ -90,6 +95,21 @@ bool pre_ltc4282_read(uint8_t sensor_num, void *args)
 	} else {
 		k_msleep(ADC_12BIT_MODE_DELAY_MS);
 	}
+
+	return true;
+}
+
+bool post_ast_adc_read(uint8_t sensor_num, void *args, int *reading)
+{
+	if (!args || !reading)
+		return false;
+
+	sensor_val *sval = (sensor_val *)reading;
+	ast_adc_post_proc_arg *post_arg = (ast_adc_post_proc_arg *)args;
+
+	float val = (post_arg->amplification) * (sval->integer + ((float)sval->fraction / 1000));
+	sval->integer = (int)val & 0xFFFF;
+	sval->fraction = (val - sval->integer) * 1000;
 
 	return true;
 }

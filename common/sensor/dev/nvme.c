@@ -2,9 +2,7 @@
 #include "sensor.h"
 #include "hal_i2c.h"
 #include "pal.h"
-
-#define NVMe_NOT_AVAILABLE 0x80
-#define NVMe_TMP_SENSOR_FAILURE 0x81
+#include "nvme.h"
 
 uint8_t nvme_read(uint8_t sensor_num, int *reading)
 {

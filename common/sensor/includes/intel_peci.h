@@ -1,6 +1,11 @@
 #ifndef _INTEL_PECI_H
 #define _INTEL_PECI_H
 
+#define PECI_READ_RETRY_MAX 0x03
+
+#define DIMM_TEMP_OFS_0 0x01
+#define DIMM_TEMP_OFS_1 0x02
+
 enum {
 	PECI_UNKNOWN = 0x00,
 	PECI_TEMP_CPU_MARGIN,
@@ -24,6 +29,12 @@ enum {
 	PECI_TEMP_CHANNEL7_DIMM1,
 	PECI_PWR_CPU,
 	PECI_MAX
+};
+
+enum {
+	RDPKG_IDX_PKG_TEMP = 0x02,
+	RDPKG_IDX_DIMM_TEMP = 0x0E,
+	RDPKG_IDX_TJMAX_TEMP = 0x10,
 };
 
 #endif

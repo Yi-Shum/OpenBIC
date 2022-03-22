@@ -68,7 +68,7 @@ Usage:
             1. meta-facebook/yv35-cl/src/sensor/plat_hook.c
                 '''
                 /* *init_args */
-                adc_asd_init_arg adc_asd_init_args[] = {
+                ast_adc_init_arg ast_adc_init_args[] = {
                     [0] = {.is_init = false}
                 };
                 .....
@@ -83,7 +83,7 @@ Usage:
                 '''
             2. meta-facebook/yv35-cl/src/sensor/plat_hook.h
                 '''
-                extern adc_asd_init_arg adc_asd_init_args[];
+                extern ast_adc_init_arg ast_adc_init_args[];
                 bool pre_vol_bat3v_read(uint8_t sensor_num, void *args);
                 bool post_vol_bat3v_read(uint8_t sensor_num, void *args, int *reading);
                 '''
@@ -100,7 +100,7 @@ Usage:
                 sensor_cfg plat_sensor_config[] = {
                 .....
                 { SENSOR_NUM_VOL_STBY5V  , sensor_dev_ast_adc  , adc_port9  , 0  , 0   , stby_access  , 711   , 200   , 0  , SENSOR_INIT_STATUS   , 
-                  NULL  , NULL  , NULL  , NULL  , &adc_asd_init_args[0] },
+                  NULL  , NULL  , NULL  , NULL  , &ast_adc_init_args[0] },
                 .....
                 };
                 '''

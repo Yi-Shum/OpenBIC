@@ -7,15 +7,6 @@
 #include <string.h>
 #include "intel_peci.h"
 
-#define READ_RETRY 0x03
-
-#define RDPKG_IDX_PKG_TEMP 0x02
-#define RDPKG_IDX_DIMM_TEMP 0x0E
-#define RDPKG_IDX_TJMAX_TEMP 0x10
-
-#define DIMM_TEMP_OFS_0 0x01
-#define DIMM_TEMP_OFS_1 0x02
-
 static bool peci_read_retry(uint8_t cmd, uint8_t addr, uint8_t idx, uint16_t param, uint8_t rlen,
 			    uint8_t *rbuf)
 {
@@ -23,7 +14,7 @@ static bool peci_read_retry(uint8_t cmd, uint8_t addr, uint8_t idx, uint16_t par
 		return false;
 
 	int i;
-	for (i = 0; i < READ_RETRY; i++) {
+	for (i = 0; i < PECI_READ_RETRY_MAX; i++) {
 		if (!peci_read(cmd, addr, idx, param, rlen, rbuf)) {
 			const uint8_t cc = rbuf[0];
 
@@ -34,7 +25,7 @@ static bool peci_read_retry(uint8_t cmd, uint8_t addr, uint8_t idx, uint16_t par
 		/* TODO: read failed, maybe add delay before next read */
 	}
 
-	return (i == READ_RETRY) ? false : true;
+	return (i == PECI_READ_RETRY_MAX) ? false : true;
 }
 
 static bool get_cpu_tjmax(uint8_t addr, int *reading)
@@ -251,7 +242,6 @@ uint8_t intel_peci_read(uint8_t sensor_num, int *reading)
 uint8_t intel_peci_init(uint8_t sensor_num)
 {
 	static bool is_init = false;
-	sensor_config[SensorNum_SensorCfg_map[sensor_num]].read = intel_peci_read;
 	if (!is_init) {
 		int ret;
 		ret = peci_init();
@@ -259,5 +249,6 @@ uint8_t intel_peci_init(uint8_t sensor_num)
 			return SENSOR_INIT_UNSPECIFIED_ERROR;
 		is_init = true;
 	}
+	sensor_config[SensorNum_SensorCfg_map[sensor_num]].read = intel_peci_read;
 	return SENSOR_INIT_SUCCESS;
 }

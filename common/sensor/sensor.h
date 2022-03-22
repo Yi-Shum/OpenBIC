@@ -28,23 +28,6 @@
 #define type_medusa 0x07
 #define type_fan 0x08
 
-enum ltc4282_offset {
-	LTC4282_ADJUST_OFFSET = 0x11,
-	LTC4282_VSENSE_OFFSET = 0x40,
-	LTC4282_POWER_OFFSET = 0x46,
-	LTC4282_VSOURCE_OFFSET = 0x3A,
-};
-
-enum adm1278_offset {
-	ADM1278_VSOURCE_OFFSET = 0x88,
-	ADM1278_CURRENT_OFFSET = 0x8C,
-	ADM1278_TEMP_OFFSET = 0x8D,
-	ADM1278_POWER_OFFSET = 0x97,
-	ADM1278_PEAK_IOUT_OFFSET = 0xD0,
-	ADM1278_PEAK_PIN_OFFSET = 0xDA,
-	ADM1278_EIN_EXT_OFFSET = 0xDC,
-};
-
 enum sensor_dev {
 	sensor_dev_tmp75 = 0,
 	sensor_dev_ast_adc = 0x01,
@@ -66,11 +49,6 @@ typedef struct _sensor_val {
 	int16_t integer;
 	int16_t fraction;
 } sensor_val;
-
-struct tca9548 {
-	uint8_t addr;
-	uint8_t chan;
-};
 
 static inline int acur_cal_MBR(uint8_t sensor_num, int val)
 { // for better accuracy, enlarge SDR to two byte scale
@@ -124,75 +102,10 @@ typedef struct _sensor_cfg__ {
 
 	/* if there is new parameter should be added, please add on above */
 	uint8_t retry;
+	void *priv_data;
 	uint8_t (*init)(uint8_t, int *);
 	uint8_t (*read)(uint8_t, int *);
 } sensor_cfg;
-
-/* INIT arg */
-typedef struct _isl28022_init_arg {
-	/* value to set configuration register */
-	union {
-		uint16_t value;
-		struct {
-			uint16_t MODE : 3;
-			uint16_t SADC : 4;
-			uint16_t BADC : 4;
-			uint16_t PG : 2;
-			uint16_t BRNG : 2;
-			uint16_t RST : 1;
-		} fields;
-	} config;
-	/* R_shunt valus, unit: milliohm */
-	uint32_t r_shunt;
-
-	/* Initailize function will set following arguments, no need to give value */
-	bool is_init;
-	/* used when read current/power */
-	float current_LSB;
-} isl28022_init_arg;
-
-typedef struct _adc_asd_init_arg {
-	bool is_init;
-} adc_asd_init_arg;
-
-typedef struct _adm1278_init_arg {
-	/* value to set configuration register */
-	union {
-		uint16_t value;
-		struct {
-			uint16_t RSV1 : 1;
-			uint16_t VOUT_EN : 1;
-			uint16_t VIN_EN : 1;
-			uint16_t TEMP1_EN : 1;
-			uint16_t PMON_MODE : 1;
-			uint16_t RSV2 : 3;
-			uint16_t VI_AVG : 3;
-			uint16_t PWR_AVG : 3;
-			uint16_t SIMULTANEOUS : 1;
-			uint16_t TSFILT : 1;
-		} fields;
-	} config;
-	/* Rsense valus, unit: milliohm */
-	float r_sense;
-
-	/* Initailize function will set following arguments, no need to give value */
-	bool is_init;
-
-} adm1278_init_arg;
-
-typedef struct _pex89000_init_arg {
-	uint8_t idx;
-	struct k_mutex brcm_pciesw;
-
-	/* Initailize function will set following arguments, no need to give value */
-	bool is_init;
-
-} pex89000_init_arg;
-
-typedef struct _ltc4282_init_arg {
-	float r_sense;
-
-} ltc4282_init_arg;
 
 extern bool enable_sensor_poll;
 extern uint8_t SDR_NUM;
@@ -206,6 +119,4 @@ void sensor_poll_disable();
 void sensor_poll_enable();
 void clear_unaccessible_sensor_cache();
 
-/* i2c-mux tca9548 */
-bool tca9548_select_chan(uint8_t sensor_num, void *args);
 #endif

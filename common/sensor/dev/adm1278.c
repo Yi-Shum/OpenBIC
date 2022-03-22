@@ -1,14 +1,17 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "sensor.h"
 #include "hal_i2c.h"
-#include "sensor_def.h"
+#include "adm1278.h"
 
-#define REG_PWR_MT_CFG 0xD4
+static sys_slist_t priv_data_list = SYS_SLIST_STATIC_INIT(&priv_data_list);
 
-#define ADM1278_EIN_ROLLOVER_CNT_MAX 0x10000
-#define ADM1278_EIN_SAMPLE_CNT_MAX 0x1000000
-#define ADM1278_EIN_ENERGY_CNT_MAX 0x800000
+typedef struct _adm1278_priv_data {
+	sys_snode_t node;
+	uint8_t ID;
+	float r_sense;
+} adm1278_priv_data;
 
 float adm1278_read_ein_ext(float rsense, float *val, uint8_t sensor_num)
 {
@@ -54,8 +57,8 @@ float adm1278_read_ein_ext(float rsense, float *val, uint8_t sensor_num)
 		sample += ADM1278_EIN_SAMPLE_CNT_MAX;
 	}
 
-	energy_diff = (double)(rollover - pre_rollover) * ADM1278_EIN_ENERGY_CNT_MAX + (double)energy -
-		      (double)pre_energy;
+	energy_diff = (double)(rollover - pre_rollover) * ADM1278_EIN_ENERGY_CNT_MAX +
+		      (double)energy - (double)pre_energy;
 	if (energy_diff < 0) {
 		return -1;
 	}
@@ -73,23 +76,19 @@ float adm1278_read_ein_ext(float rsense, float *val, uint8_t sensor_num)
 uint8_t adm1278_read(uint8_t sensor_num, int *reading)
 {
 	if ((reading == NULL) ||
-	    (sensor_config[SensorNum_SensorCfg_map[sensor_num]].init_args == NULL)) {
+	    (sensor_config[SensorNum_SensorCfg_map[sensor_num]].priv_data == NULL)) {
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
-	adm1278_init_arg *init_arg =
-		(adm1278_init_arg *)sensor_config[SensorNum_SensorCfg_map[sensor_num]].init_args;
-	if (init_arg->is_init == false) {
-		printk("adm1278_read, device isn't initialized\n");
-		return SENSOR_UNSPECIFIED_ERROR;
-	}
+	adm1278_priv_data *priv_data =
+		(adm1278_priv_data *)sensor_config[SensorNum_SensorCfg_map[sensor_num]].priv_data;
 
-	if (!init_arg->r_sense) {
+	if (!priv_data->r_sense) {
 		printk("adm1278_read, Rsense hasn't given\n");
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
-	float Rsense = init_arg->r_sense;
+	float Rsense = priv_data->r_sense;
 	float val;
 	uint8_t retry = 5;
 	I2C_MSG msg;
@@ -108,23 +107,23 @@ uint8_t adm1278_read(uint8_t sensor_num, int *reading)
 	}
 
 	switch (offset) {
-	case ADM1278_VSOURCE_OFFSET:
+	case PMBUS_READ_VIN:
 		// m = +19599, b = 0, R = -2
 		val = (float)(((msg.data[1] << 8) | msg.data[0]) * 100 / 19599);
 		break;
 
-	case ADM1278_CURRENT_OFFSET:
+	case PMBUS_READ_IOUT:
 	case ADM1278_PEAK_IOUT_OFFSET:
 		// m = +800 * Rsense(mohm), b = +20475, R = -1
 		val = (float)(((msg.data[1] << 8) | msg.data[0]) * 10 - 20475) / (800 * Rsense);
 		break;
 
-	case ADM1278_TEMP_OFFSET:
+	case PMBUS_READ_TEMPERATURE_1:
 		// m = +42, b = +31880, R = -1
 		val = (float)(((msg.data[1] << 8) | msg.data[0]) * 10 - 31880) / 42;
 		break;
 
-	case ADM1278_POWER_OFFSET:
+	case PMBUS_READ_PIN:
 	case ADM1278_PEAK_PIN_OFFSET:
 		// m = +6123 * Rsense(mohm), b = 0, R = -2
 		val = (float)(((msg.data[1] << 8) | msg.data[0]) * 100) / (6123 * Rsense);
@@ -158,8 +157,16 @@ uint8_t adm1278_init(uint8_t sensor_num)
 
 	adm1278_init_arg *init_args =
 		(adm1278_init_arg *)sensor_config[SensorNum_SensorCfg_map[sensor_num]].init_args;
-	if (init_args->is_init)
+	if (init_args->is_init) {
+		sys_snode_t *node;
+		SYS_SLIST_FOR_EACH_NODE (&priv_data_list, node) {
+			adm1278_priv_data *p;
+			p = CONTAINER_OF(node, adm1278_priv_data, node);
+			if (p->ID == init_args->ID)
+				sensor_config[SensorNum_SensorCfg_map[sensor_num]].priv_data = p;
+		}
 		goto skip_init;
+	}
 
 	uint8_t retry = 5;
 	I2C_MSG msg;
@@ -192,7 +199,20 @@ uint8_t adm1278_init(uint8_t sensor_num)
 		printf("<error> ADM1278 initail failed with wrong reading data\n");
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
-	init_args->is_init = 1;
+
+	/* allocate priv_data */
+	adm1278_priv_data *new_priv_data = (adm1278_priv_data *)malloc(sizeof(adm1278_priv_data));
+	if (!new_priv_data) {
+		printk("<error> adm1278_init: adm1278_priv_data malloc fail\n");
+		return SENSOR_INIT_UNSPECIFIED_ERROR;
+	}
+	/* set value of priv_data and append it to linked list */
+	new_priv_data->ID = init_args->ID;
+	new_priv_data->r_sense = init_args->r_sense;
+	sys_slist_append(&priv_data_list, &new_priv_data->node);
+	sensor_config[SensorNum_SensorCfg_map[sensor_num]].priv_data = new_priv_data;
+
+	init_args->is_init = true;
 
 skip_init:
 	sensor_config[SensorNum_SensorCfg_map[sensor_num]].read = adm1278_read;

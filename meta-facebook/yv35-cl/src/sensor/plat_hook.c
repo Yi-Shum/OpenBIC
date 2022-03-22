@@ -10,16 +10,14 @@
 /**************************************************************************************************
  * INIT ARGS
 **************************************************************************************************/
-adc_asd_init_arg adc_asd_init_args[] = { [0] = { .is_init = false } };
+ast_adc_init_arg ast_adc_init_args[] = { [0] = { .is_init = false } };
 
-adm1278_init_arg adm1278_init_args[] = {
-	[0] = { .is_init = false, .config = { 0x3F1C }, .r_sense = 0.25 }
-};
+adm1278_init_arg adm1278_init_args[] = { [0] = { .ID = 0, .config = { 0x3F1C }, .r_sense = 0.25 } };
 
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK ARGS
  **************************************************************************************************/
-struct tca9548 mux_conf_addr_0xe2[8] = {
+tca9548_channel_info mux_conf_addr_0xe2[8] = {
 	[0] = { .addr = 0xe2, .chan = 0 }, [1] = { .addr = 0xe2, .chan = 1 },
 	[2] = { .addr = 0xe2, .chan = 2 }, [3] = { .addr = 0xe2, .chan = 3 },
 	[4] = { .addr = 0xe2, .chan = 4 }, [5] = { .addr = 0xe2, .chan = 5 },
@@ -29,6 +27,10 @@ struct tca9548 mux_conf_addr_0xe2[8] = {
 isl69259_pre_proc_arg isl69259_pre_read_args[] = {
 	[0] = { 0x0 },
 	[1] = { 0x1 },
+};
+
+ast_adc_post_proc_arg ast_adc_post_args[] = {
+	[0] = { 6.67 }, [1] = { 2 }, [2] = { 1 }, [3] = { 3 }, [4] = { 3.555 },
 };
 
 /**************************************************************************************************
@@ -81,7 +83,7 @@ bool pre_nvme_read(uint8_t sensor_num, void *args)
 {
 	if (!args)
 		return false;
-	if (!tca9548_select_chan(sensor_num, (struct tca9548 *)args))
+	if (!tca9548_select_chan(sensor_num, (tca9548_channel_info *)args))
 		return false;
 
 	return true;
@@ -127,7 +129,7 @@ bool post_vol_bat3v_read(uint8_t sensor_num, void *args, int *reading)
 	if (sensor_num == SENSOR_NUM_VOL_BAT3V)
 		gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_LOW);
 
-	return true;
+	return post_ast_adc_read(sensor_num, args, reading);
 }
 
 /* INTEL PECI post read function
@@ -149,6 +151,21 @@ bool post_cpu_margin_read(uint8_t sensor_num, void *args, int *reading)
 
 	sensor_val *sval = (sensor_val *)reading;
 	sval->integer = -sval->integer; /* for BMC minus */
+	return true;
+}
+
+bool post_ast_adc_read(uint8_t sensor_num, void *args, int *reading)
+{
+	if (!args || !reading)
+		return false;
+
+	sensor_val *sval = (sensor_val *)reading;
+	ast_adc_post_proc_arg *post_arg = (ast_adc_post_proc_arg *)args;
+
+	float val = (post_arg->amplification) * (sval->integer + ((float)sval->fraction / 1000));
+	sval->integer = (int)val & 0xFFFF;
+	sval->fraction = (val - sval->integer) * 1000;
+
 	return true;
 }
 
