@@ -51,10 +51,14 @@ static int cmd_ddr5_write_read(const struct shell *shell, size_t argc, char **ar
 		return 0;
 	}
 
-	uint8_t device_addr, offset, read_len;
+	uint8_t device_addr, write_len, read_len;
 	device_addr = strtol(argv[1], NULL, 16);
-	offset = strtol(argv[2], NULL, 16);
-	read_len = strtol(argv[3], NULL, 16);
+	write_len = strtol(argv[2], NULL, 16);
+	int i = 0;
+	for (; i < write_len; i++) {
+		in[i] = strtol(argv[i + 3], NULL, 16);
+	}
+	read_len = strtol(argv[i + 3], NULL, 16);
 
 	slave.info.static_addr = device_addr;
 	slave.info.assigned_dynamic_addr = slave.info.static_addr;
@@ -66,10 +70,8 @@ static int cmd_ddr5_write_read(const struct shell *shell, size_t argc, char **ar
 		return 0;
 	}
 
-	in[0] = offset;
-	in[1] = 0;
 	xfer[0].rnw = 0;
-	xfer[0].len = 2;
+	xfer[0].len = write_len;
 	xfer[0].data.in = in;
 
 	xfer[1].rnw = 1;
@@ -179,12 +181,34 @@ static int cmd_ddr5_write(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_ddr5_set_clk(const struct shell *shell, size_t argc, char **argv)
+{
+	uint8_t high_ns, low_ns;
+	high_ns = strtol(argv[1], NULL, 16);
+	low_ns = strtol(argv[2], NULL, 16);
+
+	uint8_t hcnt, lcnt;
+	hcnt = (float)high_ns * 0.2;
+	lcnt = (float)low_ns * 0.2;
+
+	uint32_t scl_i3c_PP_reg = 0x7e7a50b8;
+	uint32_t reg_val = *(uint32_t *)scl_i3c_PP_reg;
+
+	reg_val &= ~(0xf << 16 | 0xf);
+	reg_val |= ((hcnt & 0xf) << 16 | (lcnt & 0xf));
+	*(uint32_t *)scl_i3c_PP_reg = reg_val;
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_ddr5_test, SHELL_CMD(init, NULL, "Initialize I3C bus", cmd_ddr5_init),
-	SHELL_CMD(write_read, NULL, "write and read: <addr> <offset> <read length>",
+	SHELL_CMD(write_read, NULL,
+		  "write and read: <addr> <write bytes> <write data...> <read length>",
 		  cmd_ddr5_write_read),
 	SHELL_CMD(read, NULL, "read: <addr> <read bytes>", cmd_ddr5_read),
 	SHELL_CMD(write, NULL, "write: <addr> <write bytes> <data...>", cmd_ddr5_write),
+	SHELL_CMD(set_clk, NULL, "set i3c PP clock: <high ns> <low ns>", cmd_ddr5_set_clk),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
