@@ -205,6 +205,16 @@ static int cmd_ddr5_write(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_ddr5_set_init(const struct shell *shell, size_t argc, char **argv)
+{
+	uint8_t input_data;
+
+	input_data = strtol(argv[1], NULL, 16);
+	initialized = (input_data == 0) ? 1 : 0;
+
+	return 0;
+}
+
 static int cmd_ddr5_set_clk(const struct shell *shell, size_t argc, char **argv)
 {
 	uint8_t high_ns, low_ns;
@@ -233,6 +243,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  cmd_ddr5_write_read),
 	SHELL_CMD(read, NULL, "read: <addr> <read bytes>", cmd_ddr5_read),
 	SHELL_CMD(write, NULL, "write: <addr> <write bytes> <data...>", cmd_ddr5_write),
+	SHELL_CMD(set_init, NULL, "set i3c init argument: <0/1>", cmd_ddr5_set_init),
 	SHELL_CMD(set_clk, NULL, "set i3c PP clock: <high ns> <low ns>", cmd_ddr5_set_clk),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
