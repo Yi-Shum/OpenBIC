@@ -11,6 +11,8 @@
 
 LOG_MODULE_REGISTER(ddr5_test);
 
+static uint32_t initialized = 0;
+
 static int cmd_ddr5_init(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct device *master;
@@ -34,6 +36,28 @@ static int cmd_ddr5_init(const struct shell *shell, size_t argc, char **argv)
 		return 0;
 	}
 
+	initialized = 1;
+	return 0;
+}
+
+static int cmd_ddr5_reset(const struct shell *shell, size_t argc, char **argv)
+{
+	const struct device *master;
+	int ret;
+
+	master = device_get_binding(DT_LABEL(DT_NODELABEL(i3c3)));
+	if (!master) {
+		LOG_ERR("master device not found\n");
+		return 0;
+	}
+
+	ret = i3c_master_send_rstdaa(master);
+	if (ret) {
+		LOG_ERR("RSTDAA failed %d\n", ret);
+		return 0;
+	}
+
+	initialized = 0;
 	return 0;
 }
 
@@ -62,7 +86,7 @@ static int cmd_ddr5_write_read(const struct shell *shell, size_t argc, char **ar
 
 	slave.info.static_addr = device_addr;
 	slave.info.assigned_dynamic_addr = slave.info.static_addr;
-	slave.info.i2c_mode = 0;
+	slave.info.i2c_mode = !initialized;
 
 	ret = i3c_master_attach_device(master, &slave);
 	if (ret) {
@@ -110,7 +134,7 @@ static int cmd_ddr5_read(const struct shell *shell, size_t argc, char **argv)
 
 	slave.info.static_addr = device_addr;
 	slave.info.assigned_dynamic_addr = slave.info.static_addr;
-	slave.info.i2c_mode = 0;
+	slave.info.i2c_mode = !initialized;
 
 	ret = i3c_master_attach_device(master, &slave);
 	if (ret) {
@@ -158,7 +182,7 @@ static int cmd_ddr5_write(const struct shell *shell, size_t argc, char **argv)
 
 	slave.info.static_addr = device_addr;
 	slave.info.assigned_dynamic_addr = slave.info.static_addr;
-	slave.info.i2c_mode = 0;
+	slave.info.i2c_mode = !initialized;
 
 	ret = i3c_master_attach_device(master, &slave);
 	if (ret) {
@@ -203,6 +227,7 @@ static int cmd_ddr5_set_clk(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_ddr5_test, SHELL_CMD(init, NULL, "Initialize I3C bus", cmd_ddr5_init),
+	SHELL_CMD(reset, NULL, "reset I3C bus", cmd_ddr5_reset),
 	SHELL_CMD(write_read, NULL,
 		  "write and read: <addr> <write bytes> <write data...> <read length>",
 		  cmd_ddr5_write_read),
