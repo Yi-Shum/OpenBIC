@@ -7,7 +7,7 @@
 // dedicate gpio A0~A7, B0~B7, C0~C7, D0~D7, E0~E7, total 40 gpios
 // Default name: Reserve_GPIOH0
 #define name_gpioA                                                                                 \
-	gpio_name_to_num(Reserve_GPIOA0) gpio_name_to_num(Reserve_GPIOA1)                          \
+	gpio_name_to_num(Reserve_GPIOA0) gpio_name_to_num(FM_BIOS_POST_CMPLT_BIC_N)                \
 		gpio_name_to_num(FM_CPU_BIC_SLP_S3_N) gpio_name_to_num(APML_CPU_ALERT_BIC_N)       \
 			gpio_name_to_num(IRQ_UV_DETECT_N) gpio_name_to_num(Reserve_GPIOA5)         \
 				gpio_name_to_num(PVDDCR_CPU0_BIC_OCP_N)                            \
@@ -47,7 +47,8 @@
 	gpio_name_to_num(Reserve_GPIOG0) gpio_name_to_num(FM_BIOS_MRC_DEBUG_MSG_DIS)               \
 		gpio_name_to_num(FAST_PROCHOT_N) gpio_name_to_num(Reserve_GPIOG3)                  \
 			gpio_name_to_num(BIC_JTAG_SEL_R) gpio_name_to_num(Reserve_GPIOG5)          \
-				gpio_name_to_num(Reserve_GPIOG6) gpio_name_to_num(Reserve_GPIOG7)
+				gpio_name_to_num(HSC_OCP_GPIO2_R)                                  \
+					gpio_name_to_num(HSC_OCP_GPIO3_R)
 #define name_gpioH                                                                                 \
 	gpio_name_to_num(RST_RSMRST_BMC_N) gpio_name_to_num(Reserve_GPIOH1)                        \
 		gpio_name_to_num(Reserve_GPIOH2) gpio_name_to_num(FM_CPU_BIC_PROCHOT_LVT3_N)       \
@@ -76,7 +77,7 @@
 #define name_gpioM                                                                                 \
 	gpio_name_to_num(BIC_SECUREBOOT) gpio_name_to_num(BOARD_ID3)                               \
 		gpio_name_to_num(BIC_ESPI_SELECT) gpio_name_to_num(Reserve_GPIOM3)                 \
-			gpio_name_to_num(Reserve_GPIOM4) gpio_name_to_num(Reserve_GPIOM5)          \
+			gpio_name_to_num(BOARD_ID5) gpio_name_to_num(BOARD_ID4)                    \
 				gpio_name_to_num(Reserve_GPIOM6) gpio_name_to_num(Reserve_GPIOM7)
 #define name_gpioN                                                                                 \
 	gpio_name_to_num(SGPIO_BMC_CLK_R) gpio_name_to_num(SGPIO_BMC_LD_R_N)                       \
@@ -118,10 +119,10 @@
 				gpio_name_to_num(Reserve_GPIOT6) gpio_name_to_num(HSC_TYPE_0)
 // GPIOU input only
 #define name_gpioU                                                                                 \
-	gpio_name_to_num(HSC_TYPE_1) gpio_name_to_num(Reserve_GPIOU1)                              \
+	gpio_name_to_num(Reserve_GPIOU0) gpio_name_to_num(Reserve_GPIOU1)                          \
 		gpio_name_to_num(Reserve_GPIOU2) gpio_name_to_num(Reserve_GPIOU3)                  \
 			gpio_name_to_num(Reserve_GPIOU4) gpio_name_to_num(Reserve_GPIOU5)          \
-				gpio_name_to_num(Reserve_GPIOU6) gpio_name_to_num(Reserve_GPIOU7)
+				gpio_name_to_num(Reserve_GPIOU6) gpio_name_to_num(HSC_TYPE_1)
 
 #define gpio_name_to_num(x) x,
 enum _GPIO_NUMS_ {
