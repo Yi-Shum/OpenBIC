@@ -14,10 +14,10 @@
 /**************************************************************************************************
  * INIT ARGS
 **************************************************************************************************/
-adc_asd_init_arg adc_asd_init_args[] = { [0] = { .is_init = false } };
+ast_adc_init_arg ast_adc_init_args[] = { [0] = { .is_init = false } };
 
 adm1278_init_arg adm1278_init_args[] = {
-	[0] = { .is_init = false, .config = { 0x3F1C }, .r_sense = 0.25 }
+	[0] = { .ID = 0, .is_init = false, .config = { 0x3F1C }, .r_sense = 0.25 }
 };
 mp5990_init_arg mp5990_init_args[] = {
 	[0] = { .is_init = false, .iout_cal_gain = 0x0104, .iout_oc_fault_limit = 0x0028 },
@@ -27,7 +27,7 @@ mp5990_init_arg mp5990_init_args[] = {
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK ARGS
  **************************************************************************************************/
-struct tca9548 mux_conf_addr_0xe2[8] = {
+tca9548_channel_info mux_conf_addr_0xe2[8] = {
 	[0] = { .addr = 0xe2, .chan = 0 }, [1] = { .addr = 0xe2, .chan = 1 },
 	[2] = { .addr = 0xe2, .chan = 2 }, [3] = { .addr = 0xe2, .chan = 3 },
 	[4] = { .addr = 0xe2, .chan = 4 }, [5] = { .addr = 0xe2, .chan = 5 },
@@ -39,6 +39,12 @@ isl69259_pre_proc_arg isl69259_pre_read_args[] = {
 	[1] = { 0x1 },
 };
 
+ast_adc_post_proc_arg ast_adc_post_args[] = {
+	[0] = { 6.67 },
+	[1] = { 2 },
+	[2] = { 3 },
+	[3] = { 3.555 },
+};
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK FUNC
  **************************************************************************************************/
@@ -80,7 +86,7 @@ bool pre_isl69259_read(uint8_t sensor_num, void *args)
  * set mux
  *
  * @param sensor_num sensor number
- * @param args pointer to struct tca9548
+ * @param args pointer to tca9548_channel_info
  * @param reading pointer to reading from previous step
  * @retval true if setting mux is successful.
  * @retval false if setting mux fails.
@@ -89,7 +95,7 @@ bool pre_nvme_read(uint8_t sensor_num, void *args)
 {
 	if (!args)
 		return false;
-	if (!tca9548_select_chan(sensor_num, (struct tca9548 *)args))
+	if (!tca9548_select_chan(sensor_num, (tca9548_channel_info *)args))
 		return false;
 
 	return true;
@@ -135,7 +141,7 @@ bool post_vol_bat3v_read(uint8_t sensor_num, void *args, int *reading)
 	if (sensor_num == SENSOR_NUM_VOL_BAT3V)
 		gpio_set(A_P3V_BAT_SCALED_EN_R, GPIO_LOW);
 
-	return true;
+	return post_ast_adc_read(sensor_num, args, reading);
 }
 
 /* INTEL PECI post read function
@@ -207,5 +213,20 @@ bool post_adm1278_current_read(uint8_t sensor_num, void *args, int *reading)
 	val = ADJUST_ADM1278_CURRENT(val);
 	sval->integer = (int)val & 0xFFFF;
 	sval->fraction = (val - sval->integer) * 1000;
+	return true;
+}
+
+bool post_ast_adc_read(uint8_t sensor_num, void *args, int *reading)
+{
+	if (!args || !reading)
+		return false;
+
+	sensor_val *sval = (sensor_val *)reading;
+	ast_adc_post_proc_arg *post_arg = (ast_adc_post_proc_arg *)args;
+
+	float val = (post_arg->amplification) * (sval->integer + ((float)sval->fraction / 1000));
+	sval->integer = (int)val & 0xFFFF;
+	sval->fraction = (val - sval->integer) * 1000;
+
 	return true;
 }

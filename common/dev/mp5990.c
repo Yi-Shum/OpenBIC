@@ -15,13 +15,6 @@ uint8_t mp5990_read(uint8_t sensor_num, int *reading)
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
-	mp5990_init_arg *init_arg =
-		(mp5990_init_arg *)sensor_config[sensor_config_index_map[sensor_num]].init_args;
-	if (init_arg->is_init == false) {
-		printf("[%s], device isn't initialized\n", __func__);
-		return SENSOR_UNSPECIFIED_ERROR;
-	}
-
 	uint8_t retry = 5;
 	double val;
 	I2C_MSG msg = { 0 };
@@ -75,13 +68,14 @@ uint8_t mp5990_init(uint8_t sensor_num)
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
-	if (!sensor_config[sensor_config_index_map[sensor_num]].init_args) {
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
+	mp5990_init_arg *init_args = (mp5990_init_arg *)cfg->init_args;
+
+	if (!init_args) {
 		printf("<error> MP5990 init args are not provided!\n");
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
-	mp5990_init_arg *init_args =
-		(mp5990_init_arg *)sensor_config[sensor_config_index_map[sensor_num]].init_args;
 	if (init_args->is_init)
 		goto skip_init;
 
@@ -89,8 +83,8 @@ uint8_t mp5990_init(uint8_t sensor_num)
 	I2C_MSG msg;
 	char *data = (uint8_t *)malloc(I2C_DATA_SIZE * sizeof(uint8_t));
 
-	uint8_t bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	uint8_t target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
+	uint8_t bus = cfg->port;
+	uint8_t target_addr = cfg->target_addr;
 	uint8_t tx_len = 3;
 	uint8_t rx_len = 0;
 
@@ -100,7 +94,8 @@ uint8_t mp5990_init(uint8_t sensor_num)
 	msg = construct_i2c_message(bus, target_addr, tx_len, data, rx_len);
 	if (i2c_master_write(&msg, retry) != 0) {
 		printf("Failed to write MP5990 register(0x%x)\n", data[0]);
-		goto cleanup;
+		SAFE_FREE(data);
+		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
 	tx_len = 3;
@@ -111,14 +106,13 @@ uint8_t mp5990_init(uint8_t sensor_num)
 	msg = construct_i2c_message(bus, target_addr, tx_len, data, rx_len);
 	if (i2c_master_write(&msg, retry) != 0) {
 		printf("Failed to write MP5990 register(0x%x)\n", data[0]);
-		goto cleanup;
+		SAFE_FREE(data);
+		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 	init_args->is_init = true;
-
-cleanup:
 	SAFE_FREE(data);
 
 skip_init:
-	sensor_config[sensor_config_index_map[sensor_num]].read = mp5990_read;
+	cfg->read = mp5990_read;
 	return SENSOR_INIT_SUCCESS;
 }

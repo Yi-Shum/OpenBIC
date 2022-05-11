@@ -33,9 +33,9 @@ static bool sensor_poll_enable_flag = true;
 
 static bool is_sensor_ready_flag = false;
 
-const int negative_ten_power[16] = { 1,	    1,		1,	   1,	     1,	      1,
-				     1,	    1000000000, 100000000, 10000000, 1000000, 100000,
-				     10000, 1000,	100,	   10 };
+const int negative_ten_power[16] = { 1,     1,		1,	 1,	1,       1,
+				     1,     1000000000, 100000000, 10000000, 1000000, 100000,
+				     10000, 1000,       100,       10 };
 
 sensor_cfg *sensor_config;
 uint8_t sensor_config_num;
@@ -187,25 +187,24 @@ uint8_t get_sensor_reading(uint8_t sensor_num, int *reading, uint8_t read_mode)
 		}
 		break;
 	case GET_FROM_CACHE:
-		switch (sensor_config[sensor_config_index_map[sensor_num]].cache_status) {
+		switch (cfg->cache_status) {
 		case SENSOR_READ_SUCCESS:
 		case SENSOR_READ_ACUR_SUCCESS:
 		case SENSOR_READ_4BYTE_ACUR_SUCCESS:
-			*reading = sensor_config[sensor_config_index_map[sensor_num]].cache;
+			*reading = cfg->cache;
 			if (!access_check(
 				    sensor_num)) { // double check access to avoid not accessible read at same moment status change
 				return SENSOR_NOT_ACCESSIBLE;
 			}
-			return sensor_config[sensor_config_index_map[sensor_num]].cache_status;
+			return cfg->cache_status;
 		case SENSOR_INIT_STATUS:
-			sensor_config[sensor_config_index_map[sensor_num]].cache = SENSOR_FAIL;
-			return sensor_config[sensor_config_index_map[sensor_num]].cache_status;
+			cfg->cache = SENSOR_FAIL;
+			return cfg->cache_status;
 		default:
-			sensor_config[sensor_config_index_map[sensor_num]].cache = SENSOR_FAIL;
+			cfg->cache = SENSOR_FAIL;
 			printf("Failed to read sensor value from cache, sensor number: 0x%x\n, cache status: 0x%x",
-			       sensor_num,
-			       sensor_config[sensor_config_index_map[sensor_num]].cache_status);
-			return sensor_config[sensor_config_index_map[sensor_num]].cache_status;
+			       sensor_num, cfg->cache_status);
+			return cfg->cache_status;
 		}
 		break;
 	default:

@@ -119,8 +119,6 @@ uint8_t ast_adc_read(uint8_t sensor_num, int *reading)
 	if (!adc_read_mv(sensor_num, chip, number, &val))
 		return SENSOR_FAIL_TO_ACCESS;
 
-	val = val * cfg->arg0 / cfg->arg1;
-
 	sensor_val *sval = (sensor_val *)reading;
 	sval->integer = (val / 1000) & 0xFFFF;
 	sval->fraction = (val % 1000) & 0xFFFF;
@@ -134,13 +132,13 @@ uint8_t ast_adc_init(uint8_t sensor_num)
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
-	if (!sensor_config[sensor_config_index_map[sensor_num]].init_args) {
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
+	if (!cfg->init_args) {
 		printf("<error> ADC init args not provide!\n");
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
-	adc_asd_init_arg *init_args =
-		(adc_asd_init_arg *)sensor_config[sensor_config_index_map[sensor_num]].init_args;
+	ast_adc_init_arg *init_args = (ast_adc_init_arg *)cfg->init_args;
 	if (init_args->is_init)
 		goto skip_init;
 
@@ -177,7 +175,6 @@ uint8_t ast_adc_init(uint8_t sensor_num)
 	init_args->is_init = true;
 
 skip_init:
-	sensor_config[sensor_config_index_map[sensor_num]].read = ast_adc_read;
-
+	cfg->read = ast_adc_read;
 	return SENSOR_INIT_SUCCESS;
 }

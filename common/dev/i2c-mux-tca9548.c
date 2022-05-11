@@ -10,7 +10,7 @@ bool tca9548_select_chan(uint8_t sensor_num, void *args)
 	}
 
 	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
-	struct tca9548 *p = (struct tca9548 *)args;
+	tca9548_channel_info *p = (tca9548_channel_info *)args;
 
 	uint8_t retry = 5;
 	I2C_MSG msg = { 0 };

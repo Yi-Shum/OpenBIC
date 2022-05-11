@@ -8,14 +8,15 @@ uint8_t tmp75_read(uint8_t sensor_num, int *reading)
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
 	uint8_t retry = 5;
 	I2C_MSG msg = { 0 };
 
-	msg.bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	msg.target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
 	msg.tx_len = 1;
 	msg.rx_len = 1;
-	msg.data[0] = sensor_config[sensor_config_index_map[sensor_num]].offset;
+	msg.data[0] = cfg->offset;
 
 	if (i2c_master_read(&msg, retry))
 		return SENSOR_FAIL_TO_ACCESS;

@@ -59,10 +59,10 @@ typedef struct _sensor_val {
 	int16_t fraction;
 } sensor_val;
 
-struct tca9548 {
+typedef struct _tca9548_channel_info {
 	uint8_t addr;
 	uint8_t chan;
-};
+} tca9548_channel_info;
 
 static inline int calculate_accurate_MBR(uint8_t sensor_num, int val)
 { // for better accuracy, enlarge SDR to two byte scale
@@ -89,20 +89,18 @@ static inline float convert_MBR_to_reading(uint8_t sensor_num, uint8_t val)
 	return (val - round_add(sensor_num, val)) * SDR_M(sensor_num) / SDR_Rexp(sensor_num);
 }
 
-enum {
-	SENSOR_READ_SUCCESS,
-	SENSOR_READ_ACUR_SUCCESS,
-	SENSOR_NOT_FOUND,
-	SENSOR_NOT_ACCESSIBLE,
-	SENSOR_FAIL_TO_ACCESS,
-	SENSOR_INIT_STATUS,
-	SENSOR_UNSPECIFIED_ERROR,
-	SENSOR_POLLING_DISABLE,
-	SENSOR_PRE_READ_ERROR,
-	SENSOR_POST_READ_ERROR,
-	SENSOR_READ_API_UNREGISTER,
-	SENSOR_READ_4BYTE_ACUR_SUCCESS
-};
+enum { SENSOR_READ_SUCCESS,
+       SENSOR_READ_ACUR_SUCCESS,
+       SENSOR_NOT_FOUND,
+       SENSOR_NOT_ACCESSIBLE,
+       SENSOR_FAIL_TO_ACCESS,
+       SENSOR_INIT_STATUS,
+       SENSOR_UNSPECIFIED_ERROR,
+       SENSOR_POLLING_DISABLE,
+       SENSOR_PRE_READ_ERROR,
+       SENSOR_POST_READ_ERROR,
+       SENSOR_READ_API_UNREGISTER,
+       SENSOR_READ_4BYTE_ACUR_SUCCESS };
 
 enum { SENSOR_INIT_SUCCESS, SENSOR_INIT_UNSPECIFIED_ERROR };
 
@@ -125,12 +123,14 @@ typedef struct _sensor_cfg__ {
 
 	/* if there is new parameter should be added, please add on above */
 	uint8_t retry;
+	void *priv_data;
 	uint8_t (*init)(uint8_t, int *);
 	uint8_t (*read)(uint8_t, int *);
 } sensor_cfg;
 
 /* INIT arg */
 typedef struct _isl28022_init_arg {
+	uint8_t ID;
 	/* value to set configuration register */
 	union {
 		uint16_t value;
@@ -148,15 +148,14 @@ typedef struct _isl28022_init_arg {
 
 	/* Initialize function will set following arguments, no need to give value */
 	bool is_init;
-	/* used when read current/power */
-	float current_LSB;
 } isl28022_init_arg;
 
-typedef struct _adc_asd_init_arg {
+typedef struct _ast_adc_init_arg {
 	bool is_init;
-} adc_asd_init_arg;
+} ast_adc_init_arg;
 
 typedef struct _adm1278_init_arg {
+	uint8_t ID;
 	/* value to set configuration register */
 	union {
 		uint16_t value;
@@ -178,7 +177,6 @@ typedef struct _adm1278_init_arg {
 
 	/* Initialize function will set following arguments, no need to give value */
 	bool is_init;
-
 } adm1278_init_arg;
 
 typedef struct _pex89000_init_arg {
@@ -191,8 +189,11 @@ typedef struct _pex89000_init_arg {
 } pex89000_init_arg;
 
 typedef struct _ltc4282_init_arg {
+	uint8_t ID;
 	float r_sense;
 
+	/* Initailize function will set following arguments, no need to give value */
+	bool is_init;
 } ltc4282_init_arg;
 
 typedef struct _mp5990_init_arg {

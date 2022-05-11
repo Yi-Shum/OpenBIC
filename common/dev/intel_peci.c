@@ -336,7 +336,6 @@ uint8_t intel_peci_init(uint8_t sensor_num)
 	}
 
 	static bool is_init = false;
-	sensor_config[sensor_config_index_map[sensor_num]].read = intel_peci_read;
 	if (!is_init) {
 		int ret;
 		ret = peci_init();
@@ -344,5 +343,6 @@ uint8_t intel_peci_init(uint8_t sensor_num)
 			return SENSOR_INIT_UNSPECIFIED_ERROR;
 		is_init = true;
 	}
+	sensor_config[sensor_config_index_map[sensor_num]].read = intel_peci_read;
 	return SENSOR_INIT_SUCCESS;
 }

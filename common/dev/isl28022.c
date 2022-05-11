@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "sensor.h"
 #include "hal_i2c.h"
 
@@ -9,28 +10,42 @@
 #define ISL28022_CURRENT_REG 4
 #define ISL28022_CALIBRATION_REG 5
 
+static sys_slist_t priv_data_list = SYS_SLIST_STATIC_INIT(&priv_data_list);
+
+typedef struct _isl28022_priv_data {
+	sys_snode_t node;
+	uint8_t ID;
+	float current_LSB;
+	union {
+		uint16_t value;
+		struct {
+			uint16_t MODE : 3;
+			uint16_t SADC : 4;
+			uint16_t BADC : 4;
+			uint16_t PG : 2;
+			uint16_t BRNG : 2;
+			uint16_t RST : 1;
+		} fields;
+	} config;
+} isl28022_priv_data;
+
 uint8_t isl28022_read(uint8_t sensor_num, int *reading)
 {
 	if ((reading == NULL) || (sensor_num > SENSOR_NUM_MAX) ||
-	    (sensor_config[sensor_config_index_map[sensor_num]].init_args == NULL)) {
-		return SENSOR_UNSPECIFIED_ERROR;
-	}
-
-	isl28022_init_arg *init_arg =
-		(isl28022_init_arg *)sensor_config[sensor_config_index_map[sensor_num]].init_args;
-	if (init_arg->is_init == false) {
-		printf("isl28022_read, device isn't initialized\n");
+	    (sensor_config[sensor_config_index_map[sensor_num]].priv_data == NULL)) {
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
 	uint8_t retry = 5;
 	I2C_MSG msg;
-	uint8_t offset = sensor_config[sensor_config_index_map[sensor_num]].offset;
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
+	isl28022_priv_data *priv_data = (isl28022_priv_data *)cfg->priv_data;
+	uint8_t offset = cfg->offset;
 	sensor_val *sval = (sensor_val *)reading;
 	memset(sval, 0, sizeof(sensor_val));
 
-	msg.bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	msg.target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
 	msg.tx_len = 1;
 	msg.rx_len = 2;
 	msg.data[0] = offset;
@@ -43,10 +58,10 @@ uint8_t isl28022_read(uint8_t sensor_num, int *reading)
 		/* unsigned */
 		uint16_t read_mv;
 
-		if ((init_arg->config.fields.BRNG == 0b11) ||
-		    (init_arg->config.fields.BRNG == 0b10)) {
+		if ((priv_data->config.fields.BRNG == 0b11) ||
+		    (priv_data->config.fields.BRNG == 0b10)) {
 			read_mv = ((msg.data[0] << 6) | (msg.data[1] >> 2)) * 4;
-		} else if (init_arg->config.fields.BRNG == 0b01) {
+		} else if (priv_data->config.fields.BRNG == 0b01) {
 			read_mv = ((msg.data[0] << 5) | (msg.data[1] >> 3)) * 4;
 		} else {
 			read_mv = (((msg.data[0] & BIT_MASK(7)) << 5) | (msg.data[1] >> 3)) * 4;
@@ -56,12 +71,17 @@ uint8_t isl28022_read(uint8_t sensor_num, int *reading)
 	} else if (offset == ISL28022_CURRENT_REG) {
 		/* signed */
 		float read_current =
-			((int16_t)(msg.data[0] << 8) | msg.data[1]) * init_arg->current_LSB;
+			((int16_t)(msg.data[0] << 8) | msg.data[1]) * priv_data->current_LSB;
 		sval->integer = read_current;
 		sval->fraction = (read_current - sval->integer) * 1000;
 	} else if (offset == ISL28022_POWER_REG) {
 		/* unsigned */
-		float read_power = ((msg.data[0] << 8) | msg.data[1]) * init_arg->current_LSB * 20;
+		float read_power = ((msg.data[0] << 8) | msg.data[1]) * priv_data->current_LSB * 20;
+		/* if BRNG is set to 60V, power	is multiplied to 2 */
+		if ((priv_data->config.fields.BRNG == 0b11) ||
+		    (priv_data->config.fields.BRNG == 0b10)) {
+			read_power *= 2;
+		}
 		sval->integer = read_power;
 		sval->fraction = ((read_power - sval->integer) * 1000);
 	} else {
@@ -77,24 +97,33 @@ uint8_t isl28022_init(uint8_t sensor_num)
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
-	if (sensor_config[sensor_config_index_map[sensor_num]].init_args == NULL) {
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
+
+	if (cfg->init_args == NULL) {
 		printf("isl28022_init: init_arg is NULL\n");
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
-	sensor_config[sensor_config_index_map[sensor_num]].read = isl28022_read;
-	isl28022_init_arg *init_arg =
-		(isl28022_init_arg *)sensor_config[sensor_config_index_map[sensor_num]].init_args;
-	if (init_arg->is_init == true) {
-		return SENSOR_INIT_SUCCESS;
+	isl28022_init_arg *init_arg = cfg->init_args;
+
+	if (init_arg->is_init) {
+		sys_snode_t *node;
+		isl28022_priv_data *p;
+		SYS_SLIST_FOR_EACH_NODE (&priv_data_list, node) {
+			p = CONTAINER_OF(node, isl28022_priv_data, node);
+			if (p->ID == init_arg->ID) {
+				cfg->priv_data = p;
+			}
+		}
+		goto skip_init;
 	}
 
 	I2C_MSG msg;
 	uint8_t retry = 5;
 
 	/* set configuration register */
-	msg.bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	msg.target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
 	msg.tx_len = 3;
 	msg.data[0] = ISL28022_CONFIG_REG;
 	msg.data[1] = (init_arg->config.value >> 8) & 0xFF;
@@ -106,6 +135,7 @@ uint8_t isl28022_init(uint8_t sensor_num)
 
 	/* calculate and set calibration */
 	uint16_t v_shunt_fs, adc_res, calibration;
+	float current_LSB;
 
 	v_shunt_fs = 40 << (init_arg->config.fields.PG);
 	if (!(init_arg->config.fields.SADC & BIT(3)) &&
@@ -114,12 +144,12 @@ uint8_t isl28022_init(uint8_t sensor_num)
 	} else {
 		adc_res = 32768;
 	}
-	init_arg->current_LSB = (float)v_shunt_fs / (init_arg->r_shunt * adc_res);
-	calibration = (40.96 / (init_arg->current_LSB * init_arg->r_shunt));
+	current_LSB = (float)v_shunt_fs / (init_arg->r_shunt * adc_res);
+	calibration = (40.96 / (current_LSB * init_arg->r_shunt));
 	calibration = calibration << 1; /* 15 bits, bit[0] is fix to 0 */
 
-	msg.bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	msg.target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
 	msg.tx_len = 3;
 	msg.data[0] = ISL28022_CALIBRATION_REG;
 	msg.data[1] = (calibration >> 8) & 0xFF;
@@ -129,6 +159,21 @@ uint8_t isl28022_init(uint8_t sensor_num)
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
+	isl28022_priv_data *new_priv_data =
+		(isl28022_priv_data *)malloc(sizeof(isl28022_priv_data));
+	if (!new_priv_data) {
+		printk("<error> isl28022_init: isl28022_priv_data malloc fail\n");
+		return SENSOR_INIT_UNSPECIFIED_ERROR;
+	}
+	/* set value of priv_data and append it to linked list */
+	new_priv_data->ID = init_arg->ID;
+	new_priv_data->current_LSB = current_LSB;
+	new_priv_data->config.value = init_arg->config.value;
+	sys_slist_append(&priv_data_list, &new_priv_data->node);
+	cfg->priv_data = new_priv_data;
 	init_arg->is_init = true;
+
+skip_init:
+	cfg->read = isl28022_read;
 	return SENSOR_INIT_SUCCESS;
 }

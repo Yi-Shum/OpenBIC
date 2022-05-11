@@ -11,14 +11,15 @@ uint8_t nvme_read(uint8_t sensor_num, int *reading)
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
 	uint8_t retry = 5;
 	int val;
 	bool is_drive_ready;
 	I2C_MSG msg;
 
-	msg.bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	msg.target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
-	msg.data[0] = sensor_config[sensor_config_index_map[sensor_num]].offset;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
+	msg.data[0] = cfg->offset;
 	msg.tx_len = 1;
 	msg.rx_len = 4;
 

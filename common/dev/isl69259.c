@@ -10,23 +10,24 @@ uint8_t isl69259_read(uint8_t sensor_num, int *reading)
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
+	uint8_t offset = cfg->offset;
 	uint8_t retry = 5;
 	sensor_val *sval = (sensor_val *)reading;
 	I2C_MSG msg;
 	memset(sval, 0, sizeof(sensor_val));
 
-	msg.bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	msg.target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
 	msg.tx_len = 1;
 	msg.rx_len = 2;
-	msg.data[0] = sensor_config[sensor_config_index_map[sensor_num]].offset;
+	msg.data[0] = offset;
 
 	if (i2c_master_read(&msg, retry)) {
 		/* read fail */
 		return SENSOR_FAIL_TO_ACCESS;
 	}
 
-	uint8_t offset = sensor_config[sensor_config_index_map[sensor_num]].offset;
 	if (offset == PMBUS_READ_VOUT) {
 		/* 1 mV/LSB, unsigned integer */
 		sval->integer = ((msg.data[1] << 8) | msg.data[0]) / 1000;

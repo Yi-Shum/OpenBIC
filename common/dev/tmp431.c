@@ -19,14 +19,15 @@ uint8_t tmp431_read(uint8_t sensor_num, int *reading)
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
 	uint8_t retry = 5, temperature_high_byte = 0xFF, temperature_low_byte = 0xFF;
 	I2C_MSG msg = { 0 };
 
-	msg.bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	msg.target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
 	msg.tx_len = 1;
 	msg.rx_len = 1;
-	uint8_t offset = sensor_config[sensor_config_index_map[sensor_num]].offset;
+	uint8_t offset = cfg->offset;
 
 	if (offset == TMP431_LOCAL_TEMPERATRUE) {
 		msg.data[0] = LOCAL_TEMPERATURE_HIGH_BYTE;
@@ -77,13 +78,14 @@ uint8_t tmp431_init(uint8_t sensor_num)
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
 	uint8_t retry = 5;
 	I2C_MSG msg;
 	char *data = (uint8_t *)malloc(I2C_DATA_SIZE * sizeof(uint8_t));
 
 	// Get the temperature range from chip
-	uint8_t bus = sensor_config[sensor_config_index_map[sensor_num]].port;
-	uint8_t target_addr = sensor_config[sensor_config_index_map[sensor_num]].target_addr;
+	uint8_t bus = cfg->port;
+	uint8_t target_addr = cfg->target_addr;
 	uint8_t tx_len = 1;
 	uint8_t rx_len = 1;
 
@@ -91,13 +93,11 @@ uint8_t tmp431_init(uint8_t sensor_num)
 	msg = construct_i2c_message(bus, target_addr, tx_len, data, rx_len);
 	if (i2c_master_read(&msg, retry) != 0) {
 		printf("Failed to read TMP431 register(0x%x)\n", data[0]);
-		goto cleanup;
+		SAFE_FREE(data);
+		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 	temperature_range = (msg.data[0] & BIT(2)) == BIT(2) ? RANGE_m55_150 : RANGE_0_127;
-
-cleanup:
 	SAFE_FREE(data);
-
-	sensor_config[sensor_config_index_map[sensor_num]].read = tmp431_read;
+	cfg->read = tmp431_read;
 	return SENSOR_INIT_SUCCESS;
 }

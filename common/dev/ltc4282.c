@@ -1,29 +1,36 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "sensor.h"
 #include "hal_i2c.h"
+
+static sys_slist_t priv_data_list = SYS_SLIST_STATIC_INIT(&priv_data_list);
+
+typedef struct _ltc4282_priv_data {
+	sys_snode_t node;
+	uint8_t ID;
+	float r_sense;
+} ltc4282_priv_data;
 
 uint8_t ltc4282_read(uint8_t sensor_num, int *reading)
 {
 	if ((reading == NULL) || (sensor_num > SENSOR_NUM_MAX) ||
-	    (sensor_config[sensor_config_index_map[sensor_num]].init_args == NULL)) {
+	    (sensor_config[sensor_config_index_map[sensor_num]].priv_data == NULL)) {
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
-	ltc4282_init_arg *init_arg =
-		(ltc4282_init_arg *)sensor_config[sensor_config_index_map[sensor_num]].init_args;
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
+	ltc4282_priv_data *priv_data = (ltc4282_priv_data *)cfg->priv_data;
 
-	if (!init_arg->r_sense) {
+	if (!priv_data->r_sense) {
 		printf("%s, Rsense hasn't given\n", __func__);
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
-	float Rsense = init_arg->r_sense;
+	float Rsense = priv_data->r_sense;
 	uint8_t retry = 5;
 	double val = 0;
 	I2C_MSG msg = { 0 };
-
-	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
 
 	msg.bus = cfg->port;
 	msg.target_addr = cfg->target_addr;
@@ -64,6 +71,33 @@ uint8_t ltc4282_init(uint8_t sensor_num)
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
-	sensor_config[sensor_config_index_map[sensor_num]].read = ltc4282_read;
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
+	ltc4282_init_arg *init_args = (ltc4282_init_arg *)cfg->init_args;
+	if (init_args->is_init) {
+		sys_snode_t *node;
+		SYS_SLIST_FOR_EACH_NODE (&priv_data_list, node) {
+			ltc4282_priv_data *p;
+			p = CONTAINER_OF(node, ltc4282_priv_data, node);
+			if (p->ID == init_args->ID)
+				cfg->priv_data = p;
+		}
+		goto skip_init;
+	}
+	/* allocate priv_data */
+	ltc4282_priv_data *new_priv_data = (ltc4282_priv_data *)malloc(sizeof(ltc4282_priv_data));
+	if (!new_priv_data) {
+		printk("<error> ltc4282_init: adm1278_priv_data malloc fail\n");
+		return SENSOR_INIT_UNSPECIFIED_ERROR;
+	}
+	/* set value of priv_data and append it to linked list */
+	new_priv_data->ID = init_args->ID;
+	new_priv_data->r_sense = init_args->r_sense;
+	sys_slist_append(&priv_data_list, &new_priv_data->node);
+	cfg->priv_data = new_priv_data;
+
+	init_args->is_init = true;
+
+skip_init:
+	cfg->read = ltc4282_read;
 	return SENSOR_INIT_SUCCESS;
 }
