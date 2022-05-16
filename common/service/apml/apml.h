@@ -14,18 +14,19 @@
 #define APML_ERROR 1
 
 enum {
-	TSI_CPU_TEMP_INT = 0x01,
-	TSI_CONFIG = 0x03,
-	TSI_UPDATE_RATE = 0x04,
-	TSI_HIGH_TEMP_INT = 0x07,
-	TSI_CPU_TEMP_DEC = 0x10,
-	TSI_ALERT_CONFIG = 0xBF,
-};
-
-enum {
 	APML_MAILBOX,
 	APML_CPUID,
 	APML_MCA,
+};
+
+enum {
+	SBTSI_CPU_TEMP_INT = 0x01,
+	SBTSI_STATUS = 0x02,
+	SBTSI_CONFIG = 0x03,
+	SBTSI_UPDATE_RATE = 0x04,
+	SBTSI_HIGH_TEMP_INT = 0x07,
+	SBTSI_CPU_TEMP_DEC = 0x10,
+	SBTSI_ALERT_CONFIG = 0xBF,
 };
 
 enum {
@@ -62,17 +63,32 @@ typedef struct _mailbox_msg_ {
 } __packed __aligned(4) mailbox_msg;
 
 typedef struct __cpuid_msg_ {
+	uint8_t bus;
+	uint8_t target_addr;
+	void (*cb_fn)(struct __cpuid_msg_ *msg);
+	uint8_t thread;
+	uint8_t WrData[4];
+	uint8_t exc_value;
+	uint8_t status;
+	uint8_t RdData[8];
 } __packed __aligned(4) cpuid_msg;
 
-typedef struct __mca_msg_ {
-} __packed __aligned(4) mca_msg;
+typedef struct __mcs_msg_ {
+	uint8_t bus;
+	uint8_t target_addr;
+	void (*cb_fn)(struct __mcs_msg_ *msg);
+	uint8_t thread;
+	uint8_t WrData[4];
+	uint8_t status;
+	uint8_t RdData[8];
+} __packed __aligned(4) mcs_msg;
 
 typedef struct _apml_msg_ {
 	uint8_t msg_type;
 	union {
 		mailbox_msg mailbox;
 		cpuid_msg cpuid;
-		mca_msg mca;
+		mcs_msg mcs;
 	} data;
 } __packed __aligned(4) apml_msg;
 
@@ -80,5 +96,6 @@ bool TSI_read(uint8_t bus, uint8_t addr, uint8_t command, uint8_t *read_data);
 bool TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data);
 bool TSI_set_temperature_throttle(uint8_t bus, uint8_t addr, uint8_t temp_threshold, uint8_t rate,
 				  bool alert_comparator_mode);
+void apml_init();
 
 #endif

@@ -16,7 +16,7 @@ uint8_t amd_cpu_temp_read(uint8_t sensor_num, int *reading)
 
 	/* check read order */
 	uint8_t read_val;
-	if (TSI_read(cfg->port, cfg->target_addr, TSI_CONFIG, &read_val)) {
+	if (TSI_read(cfg->port, cfg->target_addr, SBTSI_CONFIG, &read_val)) {
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
@@ -29,13 +29,13 @@ uint8_t amd_cpu_temp_read(uint8_t sensor_num, int *reading)
 
 	uint8_t first_val;
 	if (TSI_read(cfg->port, cfg->target_addr,
-		     (read_order == 0) ? TSI_CPU_TEMP_INT : TSI_CPU_TEMP_DEC, &first_val)) {
+		     (read_order == 0) ? SBTSI_CPU_TEMP_INT : SBTSI_CPU_TEMP_DEC, &first_val)) {
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
 	uint8_t second_val;
 	if (TSI_read(cfg->port, cfg->target_addr,
-		     (read_order == 0) ? TSI_CPU_TEMP_DEC : TSI_CPU_TEMP_INT, &second_val)) {
+		     (read_order == 0) ? SBTSI_CPU_TEMP_DEC : SBTSI_CPU_TEMP_INT, &second_val)) {
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
