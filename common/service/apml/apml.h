@@ -20,6 +20,10 @@ enum {
 };
 
 enum {
+	SBRMI_MAILBOX_PKGPWR = 0x01,
+};
+
+enum {
 	SBTSI_CPU_TEMP_INT = 0x01,
 	SBTSI_STATUS = 0x02,
 	SBTSI_CONFIG = 0x03,
@@ -55,6 +59,7 @@ typedef struct _mailbox_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
 	void (*cb_fn)(struct _mailbox_msg_ *msg);
+	void *cb_arg;
 	uint8_t command;
 	uint8_t data_in[4];
 	uint8_t response_command;
@@ -66,6 +71,7 @@ typedef struct __cpuid_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
 	void (*cb_fn)(struct __cpuid_msg_ *msg);
+	void *cb_arg;
 	uint8_t thread;
 	uint8_t WrData[4];
 	uint8_t exc_value;
@@ -77,6 +83,7 @@ typedef struct __mcs_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
 	void (*cb_fn)(struct __mcs_msg_ *msg);
+	void *cb_arg;
 	uint8_t thread;
 	uint8_t WrData[4];
 	uint8_t status;

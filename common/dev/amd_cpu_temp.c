@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "sensor.h"
-#include "hal_i2c.h"
 #include "apml.h"
 
 #define READ_ORDER_BIT 5

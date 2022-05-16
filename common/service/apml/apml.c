@@ -354,6 +354,7 @@ bool read_mailbox_response(mailbox_msg *msg)
 	}
 
 	if (!RMI_read(msg->bus, msg->target_addr, SBRMI_OUTBANDMSG_INST0, &msg->response_command)) {
+		printf("[%s] read offset 0x%02x fail.\n", __func__, SBRMI_OUTBANDMSG_INST0);
 		return false;
 	}
 	for (uint8_t offset = SBRMI_OUTBANDMSG_INST1, i = 0; offset <= SBRMI_OUTBANDMSG_INST4;
@@ -365,6 +366,12 @@ bool read_mailbox_response(mailbox_msg *msg)
 		}
 		msg->data_out[i] |= (read_data << (8 * i));
 	}
+
+	if (!RMI_read(msg->bus, msg->target_addr, SBRMI_OUTBANDMSG_INST7, &msg->error_code)) {
+		printf("[%s] read offset 0x%02x fail.\n", __func__, SBRMI_OUTBANDMSG_INST7);
+		return false;
+	}
+
 	return true;
 }
 

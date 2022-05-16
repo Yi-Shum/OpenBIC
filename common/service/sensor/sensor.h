@@ -52,6 +52,7 @@ enum SENSOR_DEV {
 	sensor_dev_ast_fan = 0x16,
 	sensor_dev_tmp431 = 0x18,
 	sensor_dev_amd_cpu_temp = 0x19,
+	sensor_dev_amd_cpu_pwr = 0x20,
 	sensor_dev_max
 };
 
