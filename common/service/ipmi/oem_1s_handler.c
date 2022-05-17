@@ -23,6 +23,7 @@
 #include "altera.h"
 #include "util_spi.h"
 #include "util_sys.h"
+#include "apml.h"
 
 #define BIOS_UPDATE_MAX_OFFSET 0x4000000
 #define BIC_UPDATE_MAX_OFFSET 0x50000
@@ -1024,6 +1025,234 @@ __weak void OEM_1S_WRITE_BIC_REGISTER(ipmi_msg *msg)
 	return;
 }
 
+#ifdef ENABLE_AMD_CPU
+__weak void OEM_1S_APML_READ(ipmi_msg *msg)
+{
+	if (!msg) {
+		printf("[%s] parameter msg is NULL\n", __func__);
+		msg->completion_code = CC_UNSPECIFIED_ERROR;
+		return;
+	}
+
+	if (msg->data_len != 2) {
+		msg->completion_code = CC_INVALID_LENGTH;
+		return;
+	}
+
+	msg->completion_code = CC_SUCCESS;
+	uint8_t read_data;
+
+	switch (msg->data[0]) {
+	case 0: /* RMI */
+		if (!RMI_read(AMD_CPU_SB_BUS, AMD_CPU_SB_RMI_ADDR, msg->data[1], &read_data)) {
+			msg->completion_code = CC_CAN_NOT_RESPOND;
+		}
+		break;
+	case 1: /* TSI */
+		if (!TSI_read(AMD_CPU_SB_BUS, AMD_CPU_SB_TSI_ADDR, msg->data[1], &read_data)) {
+			msg->completion_code = CC_CAN_NOT_RESPOND;
+		}
+		break;
+	default:
+		msg->completion_code = CC_UNSPECIFIED_ERROR;
+		break;
+	}
+
+	if (msg->completion_code == CC_SUCCESS) {
+		msg->data[0] = read_data;
+		msg->data_len = 1;
+	}
+	return;
+}
+
+__weak void OEM_1S_APML_WRITE(ipmi_msg *msg)
+{
+	if (!msg) {
+		printf("[%s] parameter msg is NULL\n", __func__);
+		msg->completion_code = CC_UNSPECIFIED_ERROR;
+		return;
+	}
+	if (msg->data_len != 3) {
+		msg->completion_code = CC_INVALID_LENGTH;
+		return;
+	}
+
+	msg->completion_code = CC_SUCCESS;
+
+	switch (msg->data[0]) {
+	case 0: /* RMI */
+		if (!RMI_write(AMD_CPU_SB_BUS, AMD_CPU_SB_RMI_ADDR, msg->data[1], msg->data[2])) {
+			msg->completion_code = CC_CAN_NOT_RESPOND;
+		}
+		break;
+	case 1: /* TSI */
+		if (!TSI_write(AMD_CPU_SB_BUS, AMD_CPU_SB_TSI_ADDR, msg->data[1], msg->data[2])) {
+			msg->completion_code = CC_CAN_NOT_RESPOND;
+		}
+		break;
+	default:
+		msg->completion_code = CC_UNSPECIFIED_ERROR;
+		break;
+	}
+
+	msg->data_len = 0;
+	return;
+}
+
+#define APML_RESP_BUFF_SIZE 10
+static uint8_t apml_resp_len, apml_resp_buf[APML_RESP_BUFF_SIZE];
+
+void callback_store_response(apml_msg *msg)
+{
+	switch (msg->msg_type) {
+	case APML_MSG_TYPE_MAILBOX: {
+		mailbox_msg *mb_msg = &msg->data.mailbox;
+		apml_resp_buf[0] = APML_MSG_TYPE_MAILBOX;
+		apml_resp_buf[1] = mb_msg->response_command;
+		memcpy(&apml_resp_buf[2], mb_msg->data_out, 4);
+		apml_resp_buf[6] = mb_msg->error_code;
+		apml_resp_len = 7;
+		break;
+	}
+	case APML_MSG_TYPE_CPUID: {
+		cpuid_msg *cpuid_msg = &msg->data.cpuid;
+		apml_resp_buf[0] = APML_MSG_TYPE_CPUID;
+		apml_resp_buf[1] = cpuid_msg->status;
+		memcpy(&apml_resp_buf[2], cpuid_msg->RdData, 8);
+		apml_resp_len = 10;
+		break;
+	}
+	case APML_MSG_TYPE_MCA: {
+		mca_msg *mca_msg = &msg->data.mca;
+		apml_resp_buf[0] = APML_MSG_TYPE_MCA;
+		apml_resp_buf[1] = mca_msg->status;
+		memcpy(&apml_resp_buf[2], mca_msg->RdData, 8);
+		apml_resp_len = 10;
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+static bool get_apml_response(uint8_t *data, uint8_t array_size, uint8_t *data_len)
+{
+	if ((data == NULL) || (apml_resp_len == 0) || apml_resp_len > array_size) {
+		return false;
+	}
+	memcpy(data, apml_resp_buf, apml_resp_len);
+	*data_len = apml_resp_len;
+	apml_resp_len = 0;
+	return true;
+}
+
+__weak void OEM_1S_SEND_APML_REQUEST(ipmi_msg *msg)
+{
+	if (!msg) {
+		printf("[%s] parameter msg is NULL\n", __func__);
+		msg->completion_code = CC_UNSPECIFIED_ERROR;
+		return;
+	}
+	if (msg->data_len < 1) {
+		msg->completion_code = CC_INVALID_LENGTH;
+		return;
+	}
+
+	apml_msg req_msg;
+
+	switch (msg->data[0]) {
+	case 0: /* Mailbox */
+		if (msg->data_len != 5) {
+			msg->completion_code = CC_INVALID_LENGTH;
+			return;
+		}
+
+		req_msg.msg_type = APML_MSG_TYPE_MAILBOX;
+		req_msg.cb_fn = callback_store_response;
+		mailbox_msg *mb_msg = &req_msg.data.mailbox;
+		mb_msg->bus = AMD_CPU_SB_BUS;
+		mb_msg->target_addr = AMD_CPU_SB_RMI_ADDR;
+		mb_msg->command = msg->data[1];
+		memcpy(mb_msg->data_in, &msg->data[2], 4);
+
+		if (!apml_read(&req_msg)) {
+			msg->completion_code = CC_UNSPECIFIED_ERROR;
+			return;
+		}
+		break;
+	case 1: /* CPUID */
+		if (msg->data_len != 6) {
+			msg->completion_code = CC_INVALID_LENGTH;
+			return;
+		}
+
+		req_msg.msg_type = APML_MSG_TYPE_CPUID;
+		req_msg.cb_fn = callback_store_response;
+		cpuid_msg *cpuid_msg = &req_msg.data.cpuid;
+		cpuid_msg->bus = AMD_CPU_SB_BUS;
+		cpuid_msg->target_addr = AMD_CPU_SB_RMI_ADDR;
+		cpuid_msg->thread = msg->data[1];
+		memcpy(cpuid_msg->WrData, &msg->data[2], 4);
+		cpuid_msg->exc_value = msg->data[6];
+
+		if (!apml_read(&req_msg)) {
+			msg->completion_code = CC_UNSPECIFIED_ERROR;
+			return;
+		}
+		break;
+	case 2: /* MCA */
+		if (msg->data_len != 5) {
+			msg->completion_code = CC_INVALID_LENGTH;
+			return;
+		}
+
+		req_msg.msg_type = APML_MSG_TYPE_CPUID;
+		req_msg.cb_fn = callback_store_response;
+		mca_msg *mca_msg = &req_msg.data.mca;
+		mca_msg->bus = AMD_CPU_SB_BUS;
+		mca_msg->target_addr = AMD_CPU_SB_RMI_ADDR;
+		mca_msg->thread = msg->data[1];
+		memcpy(mca_msg->WrData, &msg->data[2], 4);
+
+		if (!apml_read(&req_msg)) {
+			msg->completion_code = CC_UNSPECIFIED_ERROR;
+			return;
+		}
+		break;
+	default:
+		msg->completion_code = CC_UNSPECIFIED_ERROR;
+		break;
+	}
+
+	msg->data_len = 0;
+	msg->completion_code = CC_SUCCESS;
+	return;
+}
+
+__weak void OEM_1S_GET_APML_RESPONSE(ipmi_msg *msg)
+{
+	if (!msg) {
+		printf("[%s] parameter msg is NULL\n", __func__);
+		msg->completion_code = CC_UNSPECIFIED_ERROR;
+		return;
+	}
+	if (msg->data_len != 0) {
+		msg->completion_code = CC_INVALID_LENGTH;
+		return;
+	}
+
+	uint8_t data_len;
+	if (!get_apml_response(msg->data, APML_RESP_BUFF_SIZE, &data_len)) {
+		msg->completion_code = CC_UNSPECIFIED_ERROR;
+	} else {
+		msg->data_len = data_len;
+		msg->completion_code = CC_SUCCESS;
+	}
+
+	return;
+}
+#endif
+
 #ifdef ENABLE_FAN
 __weak void OEM_1S_SET_FAN_DUTY_AUTO(ipmi_msg *msg)
 {
@@ -1237,6 +1466,20 @@ void IPMI_OEM_1S_handler(ipmi_msg *msg)
 	case CMD_OEM_1S_WRITE_BIC_REGISTER:
 		OEM_1S_WRITE_BIC_REGISTER(msg);
 		break;
+#ifdef ENABLE_AMD_CPU
+	case CMD_OEM_1S_APML_READ:
+		OEM_1S_APML_READ(msg);
+		break;
+	case CMD_OEM_1S_APML_WRITE:
+		OEM_1S_APML_WRITE(msg);
+		break;
+	case CMD_OEM_1S_SEND_APML_REQUEST:
+		OEM_1S_SEND_APML_REQUEST(msg);
+		break;
+	case CMD_OEM_1S_GET_APML_RESPONSE:
+		OEM_1S_GET_APML_RESPONSE(msg);
+		break;
+#endif
 #ifdef CONFIG_IPMI_KCS_ASPEED
 	case CMD_OEM_1S_GET_POST_CODE:
 		OEM_1S_GET_POST_CODE(msg);

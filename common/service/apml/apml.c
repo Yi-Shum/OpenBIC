@@ -77,7 +77,7 @@ bool TSI_set_temperature_throttle(uint8_t bus, uint8_t addr, uint8_t temp_thresh
 
 /****************** RMI *********************/
 
-static uint8_t RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data)
+bool RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data)
 {
 	uint8_t retry = 5;
 	I2C_MSG msg;
@@ -95,7 +95,7 @@ static uint8_t RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read
 	}
 }
 
-static uint8_t RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data)
+bool RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data)
 {
 	uint8_t retry = 5;
 	I2C_MSG msg;
@@ -114,7 +114,7 @@ static uint8_t RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t writ
 
 /****************** MCA *********************/
 
-static bool write_MCA_request(mcs_msg *msg)
+static bool write_MCA_request(mca_msg *msg)
 {
 	uint8_t retry = 5;
 	I2C_MSG i2c_msg;
@@ -137,7 +137,7 @@ static bool write_MCA_request(mcs_msg *msg)
 	return true;
 }
 
-static bool read_MCA_response(mcs_msg *msg)
+static bool read_MCA_response(mca_msg *msg)
 {
 	uint8_t retry = 5;
 	I2C_MSG i2c_msg;
@@ -155,7 +155,7 @@ static bool read_MCA_response(mcs_msg *msg)
 	return true;
 }
 
-static void access_MCA(mcs_msg *msg)
+static void access_MCA(mca_msg *msg)
 {
 	/* block write request */
 	if (!write_MCA_request(msg)) {
@@ -195,11 +195,6 @@ static void access_MCA(mcs_msg *msg)
 	if (i == RETRY_MAX) {
 		printf("[%s] CPUID clear HwAlert retry max.\n", __func__);
 		return;
-	}
-
-	/* run callback function */
-	if (msg->cb_fn) {
-		msg->cb_fn(msg);
 	}
 }
 
@@ -288,13 +283,6 @@ static void access_CPUID(cpuid_msg *msg)
 		printf("[%s] CPUID clear HwAlert retry max.\n", __func__);
 		return;
 	}
-
-	/* run callback function */
-	if (msg->cb_fn) {
-		msg->cb_fn(msg);
-	}
-
-	return;
 }
 
 /****************** RMI Mailbox**************/
@@ -408,10 +396,19 @@ static void access_RMI_mailbox(mailbox_msg *msg)
 		printf("[%s] clear software alert fail\n", __func__);
 		return;
 	}
+}
 
-	if (msg->cb_fn) {
-		msg->cb_fn(msg);
+bool apml_read(apml_msg *msg)
+{
+	if (msg == NULL) {
+		printk("[%s] msg is NULL\n", __func__);
+		return false;
 	}
+
+	if (k_msgq_put(&apml_msgq, msg, K_FOREVER)) {
+		return false;
+	}
+	return true;
 }
 
 static void apml_handler(void *arvg0, void *arvg1, void *arvg2)
@@ -423,17 +420,21 @@ static void apml_handler(void *arvg0, void *arvg1, void *arvg2)
 		k_msgq_get(&apml_msgq, &msg_cfg, K_FOREVER);
 
 		switch (msg_cfg.msg_type) {
-		case APML_MAILBOX:
+		case APML_MSG_TYPE_MAILBOX:
 			access_RMI_mailbox(&msg_cfg.data.mailbox);
 			break;
-		case APML_CPUID:
+		case APML_MSG_TYPE_CPUID:
 			access_CPUID(&msg_cfg.data.cpuid);
 			break;
-		case APML_MCA:
-			access_MCA(&msg_cfg.data.mcs);
+		case APML_MSG_TYPE_MCA:
+			access_MCA(&msg_cfg.data.mca);
 			break;
 		default:
 			break;
+		}
+
+		if (msg_cfg.cb_fn) {
+			msg_cfg.cb_fn(&msg_cfg);
 		}
 	}
 }

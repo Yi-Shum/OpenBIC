@@ -1,10 +1,6 @@
 #ifndef APML_H
 #define APML_H
 
-#endif
-#ifndef IPMB_H
-#define IPMB_H
-
 #define APML_HANDLER_STACK_SIZE 2048
 #define APML_BUF_LEN 5
 #define APML_BUFF_SIZE 4
@@ -14,9 +10,9 @@
 #define APML_ERROR 1
 
 enum {
-	APML_MAILBOX,
-	APML_CPUID,
-	APML_MCA,
+	APML_MSG_TYPE_MAILBOX,
+	APML_MSG_TYPE_CPUID,
+	APML_MSG_TYPE_MCA,
 };
 
 enum {
@@ -58,8 +54,6 @@ enum {
 typedef struct _mailbox_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
-	void (*cb_fn)(struct _mailbox_msg_ *msg);
-	void *cb_arg;
 	uint8_t command;
 	uint8_t data_in[4];
 	uint8_t response_command;
@@ -70,8 +64,6 @@ typedef struct _mailbox_msg_ {
 typedef struct __cpuid_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
-	void (*cb_fn)(struct __cpuid_msg_ *msg);
-	void *cb_arg;
 	uint8_t thread;
 	uint8_t WrData[4];
 	uint8_t exc_value;
@@ -79,30 +71,34 @@ typedef struct __cpuid_msg_ {
 	uint8_t RdData[8];
 } __packed __aligned(4) cpuid_msg;
 
-typedef struct __mcs_msg_ {
+typedef struct __mca_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
-	void (*cb_fn)(struct __mcs_msg_ *msg);
-	void *cb_arg;
 	uint8_t thread;
 	uint8_t WrData[4];
 	uint8_t status;
 	uint8_t RdData[8];
-} __packed __aligned(4) mcs_msg;
+} __packed __aligned(4) mca_msg;
 
 typedef struct _apml_msg_ {
 	uint8_t msg_type;
 	union {
 		mailbox_msg mailbox;
 		cpuid_msg cpuid;
-		mcs_msg mcs;
+		mca_msg mca;
 	} data;
+	void (*cb_fn)(struct _apml_msg_ *msg);
+	void *ptr_arg;
+	uint32_t ui32_arg;
 } __packed __aligned(4) apml_msg;
 
 bool TSI_read(uint8_t bus, uint8_t addr, uint8_t command, uint8_t *read_data);
 bool TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data);
 bool TSI_set_temperature_throttle(uint8_t bus, uint8_t addr, uint8_t temp_threshold, uint8_t rate,
 				  bool alert_comparator_mode);
+bool RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data);
+bool RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data);
+bool apml_read(apml_msg *msg);
 void apml_init();
 
 #endif
