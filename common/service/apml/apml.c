@@ -11,10 +11,11 @@ struct k_msgq apml_msgq;
 struct k_thread apml_thread;
 char __aligned(4) apml_msgq_buffer[APML_BUF_LEN * sizeof(apml_msg)];
 K_KERNEL_STACK_MEMBER(APML_HANDLER_stack, APML_HANDLER_STACK_SIZE);
+static uint8_t apml_resp_len, apml_resp_buf[APML_RESP_BUFF_SIZE];
 
 /****************** TSI *********************/
 
-bool TSI_read(uint8_t bus, uint8_t addr, uint8_t command, uint8_t *read_data)
+uint8_t TSI_read(uint8_t bus, uint8_t addr, uint8_t command, uint8_t *read_data)
 {
 	uint8_t retry = 5;
 	I2C_MSG msg;
@@ -25,13 +26,13 @@ bool TSI_read(uint8_t bus, uint8_t addr, uint8_t command, uint8_t *read_data)
 	msg.data[0] = command;
 
 	if (i2c_master_read(&msg, retry)) {
-		return false;
+		return APML_ERROR;
 	}
 	*read_data = msg.data[0];
-	return true;
+	return APML_SUCCESS;
 }
 
-bool TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data)
+uint8_t TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data)
 {
 	uint8_t retry = 5;
 	I2C_MSG msg;
@@ -42,42 +43,42 @@ bool TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data)
 	msg.data[0] = command;
 
 	if (i2c_master_write(&msg, retry)) {
-		return false;
+		return APML_ERROR;
 	}
-	return true;
+	return APML_SUCCESS;
 }
 
-bool TSI_set_temperature_throttle(uint8_t bus, uint8_t addr, uint8_t temp_threshold, uint8_t rate,
-				  bool alert_comparator_mode)
+uint8_t TSI_set_temperature_throttle(uint8_t bus, uint8_t addr, uint8_t temp_threshold,
+				     uint8_t rate, bool alert_comparator_mode)
 {
 	/* 
 	 * 1. Set high temperature threshold.
 	 * 2. Set 'alert comparator mode' enable/disable.
 	 * 3. Set update rate.
 	 */
-	if (!TSI_write(bus, addr, SBTSI_HIGH_TEMP_INT, temp_threshold)) {
-		return false;
+	if (TSI_write(bus, addr, SBTSI_HIGH_TEMP_INT, temp_threshold)) {
+		return APML_ERROR;
 	}
 
 	if (alert_comparator_mode) {
 		if (TSI_write(bus, addr, SBTSI_ALERT_CONFIG, 0x01)) {
-			return false;
+			return APML_ERROR;
 		}
 	} else {
 		if (TSI_write(bus, addr, SBTSI_ALERT_CONFIG, 0x00)) {
-			return false;
+			return APML_ERROR;
 		}
 	}
 
 	if (TSI_write(bus, addr, SBTSI_UPDATE_RATE, rate)) {
-		return false;
+		return APML_ERROR;
 	}
-	return true;
+	return APML_SUCCESS;
 }
 
 /****************** RMI *********************/
 
-bool RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data)
+uint8_t RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data)
 {
 	uint8_t retry = 5;
 	I2C_MSG msg;
@@ -88,14 +89,14 @@ bool RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data)
 	msg.rx_len = 1;
 
 	if (i2c_master_read(&msg, retry)) {
-		return false;
+		return APML_ERROR;
 	} else {
 		*read_data = msg.data[0];
-		return true;
+		return APML_SUCCESS;
 	}
 }
 
-bool RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data)
+uint8_t RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data)
 {
 	uint8_t retry = 5;
 	I2C_MSG msg;
@@ -106,15 +107,15 @@ bool RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data)
 	msg.data[1] = write_data;
 
 	if (i2c_master_write(&msg, retry)) {
-		return false;
+		return APML_ERROR;
 	} else {
-		return true;
+		return APML_SUCCESS;
 	}
 }
 
 /****************** MCA *********************/
 
-static bool write_MCA_request(mca_msg *msg)
+static uint8_t write_MCA_request(mca_msg *msg)
 {
 	uint8_t retry = 5;
 	I2C_MSG i2c_msg;
@@ -132,12 +133,12 @@ static bool write_MCA_request(mca_msg *msg)
 	i2c_msg.data[8] = msg->WrData[3];
 
 	if (i2c_master_write(&i2c_msg, retry)) {
-		return false;
+		return APML_ERROR;
 	}
-	return true;
+	return APML_SUCCESS;
 }
 
-static bool read_MCA_response(mca_msg *msg)
+static uint8_t read_MCA_response(mca_msg *msg)
 {
 	uint8_t retry = 5;
 	I2C_MSG i2c_msg;
@@ -147,18 +148,18 @@ static bool read_MCA_response(mca_msg *msg)
 	i2c_msg.rx_len = 10;
 	i2c_msg.data[0] = 0x73;
 	if (i2c_master_read(&i2c_msg, retry)) {
-		return false;
+		return APML_ERROR;
 	}
 
 	msg->status = i2c_msg.data[1];
 	memcpy(msg->RdData, &i2c_msg.data[2], 8);
-	return true;
+	return APML_SUCCESS;
 }
 
 static void access_MCA(mca_msg *msg)
 {
-	/* block write request */
-	if (!write_MCA_request(msg)) {
+	/* write request */
+	if (write_MCA_request(msg)) {
 		printf("[%s] write MCA request fail.\n", __func__);
 		return;
 	}
@@ -167,7 +168,7 @@ static void access_MCA(mca_msg *msg)
 	int i = 0;
 	uint8_t read_data;
 	for (; i < RETRY_MAX; i++) {
-		if (RMI_read(msg->bus, msg->target_addr, SBRMI_STATUS, &read_data)) {
+		if (!RMI_read(msg->bus, msg->target_addr, SBRMI_STATUS, &read_data)) {
 			if (read_data & 0x80) {
 				break;
 			}
@@ -179,28 +180,22 @@ static void access_MCA(mca_msg *msg)
 		return;
 	}
 
-	/* block read response */
-	if (!read_MCA_response(msg)) {
+	/* read response */
+	if (read_MCA_response(msg)) {
 		printf("[%s] read response fail.\n", __func__);
 		return;
 	}
 
 	/* clear HwAlert */
-	for (; i < RETRY_MAX; i++) {
-		if (RMI_write(msg->bus, msg->target_addr, SBRMI_STATUS, 0x80)) {
-			break;
-		}
-		k_msleep(WAIT_TIME_MS);
-	}
-	if (i == RETRY_MAX) {
-		printf("[%s] CPUID clear HwAlert retry max.\n", __func__);
+	if (RMI_write(msg->bus, msg->target_addr, SBRMI_STATUS, 0x80)) {
+		printf("[%s] clear HwAlert fail.\n", __func__);
 		return;
 	}
 }
 
 /****************** CPUID *******************/
 
-static bool write_CPUID_request(cpuid_msg *msg)
+static uint8_t write_CPUID_request(cpuid_msg *msg)
 {
 	uint8_t retry = 5;
 	I2C_MSG i2c_msg;
@@ -219,12 +214,12 @@ static bool write_CPUID_request(cpuid_msg *msg)
 	i2c_msg.data[9] = msg->exc_value;
 
 	if (i2c_master_write(&i2c_msg, retry)) {
-		return false;
+		return APML_ERROR;
 	}
-	return true;
+	return APML_SUCCESS;
 }
 
-static bool read_CPUID_response(cpuid_msg *msg)
+static uint8_t read_CPUID_response(cpuid_msg *msg)
 {
 	uint8_t retry = 5;
 	I2C_MSG i2c_msg;
@@ -234,18 +229,18 @@ static bool read_CPUID_response(cpuid_msg *msg)
 	i2c_msg.rx_len = 10;
 	i2c_msg.data[0] = 0x73;
 	if (i2c_master_read(&i2c_msg, retry)) {
-		return false;
+		return APML_ERROR;
 	}
 
 	msg->status = i2c_msg.data[1];
 	memcpy(msg->RdData, &i2c_msg.data[2], 8);
-	return true;
+	return APML_SUCCESS;
 }
 
 static void access_CPUID(cpuid_msg *msg)
 {
 	/* block write request */
-	if (!write_CPUID_request(msg)) {
+	if (write_CPUID_request(msg)) {
 		printf("[%s] write CPUID request fail.\n", __func__);
 		return;
 	}
@@ -254,7 +249,7 @@ static void access_CPUID(cpuid_msg *msg)
 	int i = 0;
 	uint8_t read_data;
 	for (; i < RETRY_MAX; i++) {
-		if (RMI_read(msg->bus, msg->target_addr, SBRMI_STATUS, &read_data)) {
+		if (!RMI_read(msg->bus, msg->target_addr, SBRMI_STATUS, &read_data)) {
 			if (read_data & 0x80) {
 				break;
 			}
@@ -267,100 +262,87 @@ static void access_CPUID(cpuid_msg *msg)
 	}
 
 	/* block read response */
-	if (!read_CPUID_response(msg)) {
+	if (read_CPUID_response(msg)) {
 		printf("[%s] read CPUID response fail.\n", __func__);
 		return;
 	}
 
 	/* clear HwAlert */
-	for (; i < RETRY_MAX; i++) {
-		if (RMI_write(msg->bus, msg->target_addr, SBRMI_STATUS, 0x80)) {
-			break;
-		}
-		k_msleep(WAIT_TIME_MS);
-	}
-	if (i == RETRY_MAX) {
-		printf("[%s] CPUID clear HwAlert retry max.\n", __func__);
+	if (RMI_write(msg->bus, msg->target_addr, SBRMI_STATUS, 0x80)) {
+		printf("[%s] clear HwAlert fail.\n", __func__);
 		return;
 	}
 }
 
 /****************** RMI Mailbox**************/
 
-bool check_mailbox_command_complete(mailbox_msg *msg)
+static bool check_mailbox_command_complete(mailbox_msg *msg)
 {
 	uint8_t read_data;
-	if (!RMI_read(msg->bus, msg->target_addr, SBRMI_SOFTWARE_INTERRUPT, &read_data)) {
+	if (RMI_read(msg->bus, msg->target_addr, SBRMI_SOFTWARE_INTERRUPT, &read_data)) {
 		return false;
 	}
 	return (read_data & 0x01) ? false : true;
 }
 
-bool write_mailbox_request(mailbox_msg *msg)
+static uint8_t write_mailbox_request(mailbox_msg *msg)
 {
 	/* initialize */
 	uint8_t read_data;
 
-	if (!RMI_read(msg->bus, msg->target_addr, SBRMI_INBANDMSG_INST7, &read_data)) {
-		return false;
+	if (RMI_read(msg->bus, msg->target_addr, SBRMI_INBANDMSG_INST7, &read_data)) {
+		return APML_ERROR;
 	}
 	if (!(read_data & 0x80)) {
-		if (!RMI_write(msg->bus, msg->target_addr, SBRMI_INBANDMSG_INST7, 0x80)) {
-			return false;
+		if (RMI_write(msg->bus, msg->target_addr, SBRMI_INBANDMSG_INST7, 0x80)) {
+			return APML_ERROR;
 		}
 	}
 
 	/* write command */
-	if (!RMI_write(msg->bus, msg->target_addr, SBRMI_INBANDMSG_INST0, msg->command)) {
-		return false;
+	if (RMI_write(msg->bus, msg->target_addr, SBRMI_INBANDMSG_INST0, msg->command)) {
+		printf("[%s] write commad fail.\n", __func__);
+		return APML_ERROR;
 	}
 
 	/* write data */
 	for (uint8_t offset = SBRMI_INBANDMSG_INST1, i = 0; offset <= SBRMI_INBANDMSG_INST4;
 	     offset++, i++) {
-		uint8_t write_data = msg->data_in[i];
-		if (!RMI_write(msg->bus, msg->target_addr, offset, write_data)) {
-			return false;
+		if (RMI_write(msg->bus, msg->target_addr, offset, msg->data_in[i])) {
+			printf("[%s] write data of offset 0x%02x fail.\n", __func__, offset);
+			return APML_ERROR;
 		}
 	}
 
-	return true;
+	/* write 0x01 to software interrupt to perform request */
+	if (RMI_write(msg->bus, msg->target_addr, SBRMI_SOFTWARE_INTERRUPT, 0x01)) {
+		printf("[%s] write software interrupt fail.\n", __func__);
+		return APML_ERROR;
+	}
+
+	return APML_SUCCESS;
 }
 
-bool read_mailbox_response(mailbox_msg *msg)
+static uint8_t read_mailbox_response(mailbox_msg *msg)
 {
-	int i = 0;
-	for (; i < RETRY_MAX; i++) {
-		if (!check_mailbox_command_complete(msg)) {
-			k_msleep(WAIT_TIME_MS);
-			continue;
-		}
-	}
-	if (i == RETRY_MAX) {
-		printf("[%s] mailbox command not complete after retry %d.\n", __func__, RETRY_MAX);
-		return false;
-	}
-
-	if (!RMI_read(msg->bus, msg->target_addr, SBRMI_OUTBANDMSG_INST0, &msg->response_command)) {
+	if (RMI_read(msg->bus, msg->target_addr, SBRMI_OUTBANDMSG_INST0, &msg->response_command)) {
 		printf("[%s] read offset 0x%02x fail.\n", __func__, SBRMI_OUTBANDMSG_INST0);
-		return false;
+		return APML_ERROR;
 	}
 	for (uint8_t offset = SBRMI_OUTBANDMSG_INST1, i = 0; offset <= SBRMI_OUTBANDMSG_INST4;
 	     offset++, i++) {
-		uint8_t read_data;
-		if (!RMI_read(msg->bus, msg->target_addr, offset, &read_data)) {
+		if (RMI_read(msg->bus, msg->target_addr, offset, &msg->data_out[i])) {
 			printf("[%s] read offset 0x%02x fail.\n", __func__, offset);
-			return false;
+			return APML_ERROR;
 		}
-		msg->data_out[i] |= (read_data << (8 * i));
 	}
 
-	if (!RMI_read(msg->bus, msg->target_addr, SBRMI_OUTBANDMSG_INST7, &msg->error_code)) {
+	if (RMI_read(msg->bus, msg->target_addr, SBRMI_OUTBANDMSG_INST7, &msg->error_code)) {
 		printf("[%s] read offset 0x%02x fail.\n", __func__, SBRMI_OUTBANDMSG_INST7);
-		return false;
+		return APML_ERROR;
 	}
 
-	return true;
+	return APML_SUCCESS;
 }
 
 static void access_RMI_mailbox(mailbox_msg *msg)
@@ -377,38 +359,90 @@ static void access_RMI_mailbox(mailbox_msg *msg)
 		return;
 	}
 
-	if (!write_mailbox_request(msg)) {
+	if (write_mailbox_request(msg)) {
 		printf("[%s] mailbox writet request fail.\n", __func__);
 		return;
 	}
-	/* write 0x01 to software interrupt to perform request */
-	if (!RMI_write(msg->bus, msg->target_addr, SBRMI_SOFTWARE_INTERRUPT, 0x01)) {
-		printf("[%s] mailbox writet software interrupt fail.\n", __func__);
+
+	/* wait complete */
+	for (i = 0; i < RETRY_MAX; i++) {
+		if (check_mailbox_command_complete(msg)) {
+			break;
+		}
+		k_msleep(WAIT_TIME_MS);
+	}
+	if (i == RETRY_MAX) {
+		printf("[%s] mailbox command not complete after retry %d.\n", __func__, RETRY_MAX);
 		return;
 	}
 
-	if (!read_mailbox_response(msg)) {
+	if (read_mailbox_response(msg)) {
 		printf("[%s] read mailbox response fail\n", __func__);
 		return;
 	}
+
 	/* clear software alert status */
-	if (!RMI_write(msg->bus, msg->target_addr, SBRMI_STATUS, 0x02)) {
+	if (RMI_write(msg->bus, msg->target_addr, SBRMI_STATUS, 0x02)) {
 		printf("[%s] clear software alert fail\n", __func__);
 		return;
 	}
 }
 
-bool apml_read(apml_msg *msg)
+void callback_store_response(apml_msg *msg)
+{
+	switch (msg->msg_type) {
+	case APML_MSG_TYPE_MAILBOX: {
+		mailbox_msg *mb_msg = &msg->data.mailbox;
+		apml_resp_buf[0] = APML_MSG_TYPE_MAILBOX;
+		apml_resp_buf[1] = mb_msg->response_command;
+		memcpy(&apml_resp_buf[2], mb_msg->data_out, 4);
+		apml_resp_buf[6] = mb_msg->error_code;
+		apml_resp_len = 7;
+		break;
+	}
+	case APML_MSG_TYPE_CPUID: {
+		cpuid_msg *cpuid_msg = &msg->data.cpuid;
+		apml_resp_buf[0] = APML_MSG_TYPE_CPUID;
+		apml_resp_buf[1] = cpuid_msg->status;
+		memcpy(&apml_resp_buf[2], cpuid_msg->RdData, 8);
+		apml_resp_len = 10;
+		break;
+	}
+	case APML_MSG_TYPE_MCA: {
+		mca_msg *mca_msg = &msg->data.mca;
+		apml_resp_buf[0] = APML_MSG_TYPE_MCA;
+		apml_resp_buf[1] = mca_msg->status;
+		memcpy(&apml_resp_buf[2], mca_msg->RdData, 8);
+		apml_resp_len = 10;
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+uint8_t get_apml_response(uint8_t *data, uint8_t array_size, uint8_t *data_len)
+{
+	if ((data == NULL) || (apml_resp_len == 0) || apml_resp_len > array_size) {
+		return APML_ERROR;
+	}
+	memcpy(data, apml_resp_buf, apml_resp_len);
+	*data_len = apml_resp_len;
+	apml_resp_len = 0;
+	return APML_SUCCESS;
+}
+
+uint8_t apml_read(apml_msg *msg)
 {
 	if (msg == NULL) {
-		printk("[%s] msg is NULL\n", __func__);
-		return false;
+		printf("[%s] msg is NULL\n", __func__);
+		return APML_ERROR;
 	}
 
 	if (k_msgq_put(&apml_msgq, msg, K_FOREVER)) {
-		return false;
+		return APML_ERROR;
 	}
-	return true;
+	return APML_SUCCESS;
 }
 
 static void apml_handler(void *arvg0, void *arvg1, void *arvg2)

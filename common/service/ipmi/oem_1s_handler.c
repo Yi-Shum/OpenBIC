@@ -1044,12 +1044,12 @@ __weak void OEM_1S_APML_READ(ipmi_msg *msg)
 
 	switch (msg->data[0]) {
 	case 0: /* RMI */
-		if (!RMI_read(AMD_CPU_SB_BUS, AMD_CPU_SB_RMI_ADDR, msg->data[1], &read_data)) {
+		if (RMI_read(AMD_CPU_SB_BUS, AMD_CPU_SB_RMI_ADDR, msg->data[1], &read_data)) {
 			msg->completion_code = CC_CAN_NOT_RESPOND;
 		}
 		break;
 	case 1: /* TSI */
-		if (!TSI_read(AMD_CPU_SB_BUS, AMD_CPU_SB_TSI_ADDR, msg->data[1], &read_data)) {
+		if (TSI_read(AMD_CPU_SB_BUS, AMD_CPU_SB_TSI_ADDR, msg->data[1], &read_data)) {
 			msg->completion_code = CC_CAN_NOT_RESPOND;
 		}
 		break;
@@ -1081,12 +1081,12 @@ __weak void OEM_1S_APML_WRITE(ipmi_msg *msg)
 
 	switch (msg->data[0]) {
 	case 0: /* RMI */
-		if (!RMI_write(AMD_CPU_SB_BUS, AMD_CPU_SB_RMI_ADDR, msg->data[1], msg->data[2])) {
+		if (RMI_write(AMD_CPU_SB_BUS, AMD_CPU_SB_RMI_ADDR, msg->data[1], msg->data[2])) {
 			msg->completion_code = CC_CAN_NOT_RESPOND;
 		}
 		break;
 	case 1: /* TSI */
-		if (!TSI_write(AMD_CPU_SB_BUS, AMD_CPU_SB_TSI_ADDR, msg->data[1], msg->data[2])) {
+		if (TSI_write(AMD_CPU_SB_BUS, AMD_CPU_SB_TSI_ADDR, msg->data[1], msg->data[2])) {
 			msg->completion_code = CC_CAN_NOT_RESPOND;
 		}
 		break;
@@ -1097,53 +1097,6 @@ __weak void OEM_1S_APML_WRITE(ipmi_msg *msg)
 
 	msg->data_len = 0;
 	return;
-}
-
-#define APML_RESP_BUFF_SIZE 10
-static uint8_t apml_resp_len, apml_resp_buf[APML_RESP_BUFF_SIZE];
-
-void callback_store_response(apml_msg *msg)
-{
-	switch (msg->msg_type) {
-	case APML_MSG_TYPE_MAILBOX: {
-		mailbox_msg *mb_msg = &msg->data.mailbox;
-		apml_resp_buf[0] = APML_MSG_TYPE_MAILBOX;
-		apml_resp_buf[1] = mb_msg->response_command;
-		memcpy(&apml_resp_buf[2], mb_msg->data_out, 4);
-		apml_resp_buf[6] = mb_msg->error_code;
-		apml_resp_len = 7;
-		break;
-	}
-	case APML_MSG_TYPE_CPUID: {
-		cpuid_msg *cpuid_msg = &msg->data.cpuid;
-		apml_resp_buf[0] = APML_MSG_TYPE_CPUID;
-		apml_resp_buf[1] = cpuid_msg->status;
-		memcpy(&apml_resp_buf[2], cpuid_msg->RdData, 8);
-		apml_resp_len = 10;
-		break;
-	}
-	case APML_MSG_TYPE_MCA: {
-		mca_msg *mca_msg = &msg->data.mca;
-		apml_resp_buf[0] = APML_MSG_TYPE_MCA;
-		apml_resp_buf[1] = mca_msg->status;
-		memcpy(&apml_resp_buf[2], mca_msg->RdData, 8);
-		apml_resp_len = 10;
-		break;
-	}
-	default:
-		break;
-	}
-}
-
-static bool get_apml_response(uint8_t *data, uint8_t array_size, uint8_t *data_len)
-{
-	if ((data == NULL) || (apml_resp_len == 0) || apml_resp_len > array_size) {
-		return false;
-	}
-	memcpy(data, apml_resp_buf, apml_resp_len);
-	*data_len = apml_resp_len;
-	apml_resp_len = 0;
-	return true;
 }
 
 __weak void OEM_1S_SEND_APML_REQUEST(ipmi_msg *msg)
@@ -1175,7 +1128,7 @@ __weak void OEM_1S_SEND_APML_REQUEST(ipmi_msg *msg)
 		mb_msg->command = msg->data[1];
 		memcpy(mb_msg->data_in, &msg->data[2], 4);
 
-		if (!apml_read(&req_msg)) {
+		if (apml_read(&req_msg)) {
 			msg->completion_code = CC_UNSPECIFIED_ERROR;
 			return;
 		}
@@ -1195,7 +1148,7 @@ __weak void OEM_1S_SEND_APML_REQUEST(ipmi_msg *msg)
 		memcpy(cpuid_msg->WrData, &msg->data[2], 4);
 		cpuid_msg->exc_value = msg->data[6];
 
-		if (!apml_read(&req_msg)) {
+		if (apml_read(&req_msg)) {
 			msg->completion_code = CC_UNSPECIFIED_ERROR;
 			return;
 		}
@@ -1214,7 +1167,7 @@ __weak void OEM_1S_SEND_APML_REQUEST(ipmi_msg *msg)
 		mca_msg->thread = msg->data[1];
 		memcpy(mca_msg->WrData, &msg->data[2], 4);
 
-		if (!apml_read(&req_msg)) {
+		if (apml_read(&req_msg)) {
 			msg->completion_code = CC_UNSPECIFIED_ERROR;
 			return;
 		}
@@ -1242,7 +1195,7 @@ __weak void OEM_1S_GET_APML_RESPONSE(ipmi_msg *msg)
 	}
 
 	uint8_t data_len;
-	if (!get_apml_response(msg->data, APML_RESP_BUFF_SIZE, &data_len)) {
+	if (get_apml_response(msg->data, APML_RESP_BUFF_SIZE, &data_len)) {
 		msg->completion_code = CC_UNSPECIFIED_ERROR;
 	} else {
 		msg->data_len = data_len;

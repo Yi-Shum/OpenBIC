@@ -1,13 +1,14 @@
 #ifndef APML_H
 #define APML_H
 
+#define APML_SUCCESS 0
+#define APML_ERROR 1
+
 #define APML_HANDLER_STACK_SIZE 2048
 #define APML_BUF_LEN 5
 #define APML_BUFF_SIZE 4
 #define APML_MAILBOX_TIMEOUT_MS 100
-
-#define APML_SUCCESS 0
-#define APML_ERROR 1
+#define APML_RESP_BUFF_SIZE 10
 
 enum {
 	APML_MSG_TYPE_MAILBOX,
@@ -92,13 +93,15 @@ typedef struct _apml_msg_ {
 	uint32_t ui32_arg;
 } __packed __aligned(4) apml_msg;
 
-bool TSI_read(uint8_t bus, uint8_t addr, uint8_t command, uint8_t *read_data);
-bool TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data);
-bool TSI_set_temperature_throttle(uint8_t bus, uint8_t addr, uint8_t temp_threshold, uint8_t rate,
-				  bool alert_comparator_mode);
-bool RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data);
-bool RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data);
-bool apml_read(apml_msg *msg);
+uint8_t TSI_read(uint8_t bus, uint8_t addr, uint8_t command, uint8_t *read_data);
+uint8_t TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data);
+uint8_t TSI_set_temperature_throttle(uint8_t bus, uint8_t addr, uint8_t temp_threshold,
+				     uint8_t rate, bool alert_comparator_mode);
+uint8_t RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data);
+uint8_t RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data);
+void callback_store_response(apml_msg *msg);
+uint8_t get_apml_response(uint8_t *data, uint8_t array_size, uint8_t *data_len);
+uint8_t apml_read(apml_msg *msg);
 void apml_init();
 
 #endif
