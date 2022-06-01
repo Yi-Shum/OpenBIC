@@ -38,39 +38,12 @@ uint8_t TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data
 	I2C_MSG msg;
 	msg.bus = bus;
 	msg.target_addr = addr;
-	msg.tx_len = 1;
+	msg.tx_len = 2;
 	msg.rx_len = 0;
 	msg.data[0] = command;
+	msg.data[1] = write_data;
 
 	if (i2c_master_write(&msg, retry)) {
-		return APML_ERROR;
-	}
-	return APML_SUCCESS;
-}
-
-uint8_t TSI_set_temperature_throttle(uint8_t bus, uint8_t addr, uint8_t temp_threshold,
-				     uint8_t rate, bool alert_comparator_mode)
-{
-	/* 
-	 * 1. Set high temperature threshold.
-	 * 2. Set 'alert comparator mode' enable/disable.
-	 * 3. Set update rate.
-	 */
-	if (TSI_write(bus, addr, SBTSI_HIGH_TEMP_INT, temp_threshold)) {
-		return APML_ERROR;
-	}
-
-	if (alert_comparator_mode) {
-		if (TSI_write(bus, addr, SBTSI_ALERT_CONFIG, 0x01)) {
-			return APML_ERROR;
-		}
-	} else {
-		if (TSI_write(bus, addr, SBTSI_ALERT_CONFIG, 0x00)) {
-			return APML_ERROR;
-		}
-	}
-
-	if (TSI_write(bus, addr, SBTSI_UPDATE_RATE, rate)) {
 		return APML_ERROR;
 	}
 	return APML_SUCCESS;
@@ -85,8 +58,8 @@ uint8_t RMI_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *read_data)
 	msg.bus = bus;
 	msg.target_addr = addr;
 	msg.tx_len = 1;
-	msg.data[0] = offset;
 	msg.rx_len = 1;
+	msg.data[0] = offset;
 
 	if (i2c_master_read(&msg, retry)) {
 		return APML_ERROR;
@@ -103,6 +76,7 @@ uint8_t RMI_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t write_data)
 	msg.bus = bus;
 	msg.target_addr = addr;
 	msg.tx_len = 2;
+	msg.rx_len = 0;
 	msg.data[0] = offset;
 	msg.data[1] = write_data;
 

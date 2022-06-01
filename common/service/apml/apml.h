@@ -52,7 +52,7 @@ enum {
 	SBRMI_RAS_STATUS = 0x4C,
 };
 
-typedef struct _mailbox_msg_ {
+typedef __aligned(4) struct _mailbox_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
 	uint8_t command;
@@ -60,9 +60,9 @@ typedef struct _mailbox_msg_ {
 	uint8_t response_command;
 	uint8_t data_out[4];
 	uint8_t error_code;
-} __packed __aligned(4) mailbox_msg;
+} __packed mailbox_msg;
 
-typedef struct __cpuid_msg_ {
+typedef __aligned(4) struct __cpuid_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
 	uint8_t thread;
@@ -70,18 +70,18 @@ typedef struct __cpuid_msg_ {
 	uint8_t exc_value;
 	uint8_t status;
 	uint8_t RdData[8];
-} __packed __aligned(4) cpuid_msg;
+} __packed cpuid_msg;
 
-typedef struct __mca_msg_ {
+typedef __aligned(4) struct __mca_msg_ {
 	uint8_t bus;
 	uint8_t target_addr;
 	uint8_t thread;
 	uint8_t WrData[4];
 	uint8_t status;
 	uint8_t RdData[8];
-} __packed __aligned(4) mca_msg;
+} __packed mca_msg;
 
-typedef struct _apml_msg_ {
+typedef __aligned(4) struct _apml_msg_ {
 	uint8_t msg_type;
 	union {
 		mailbox_msg mailbox;
@@ -91,7 +91,7 @@ typedef struct _apml_msg_ {
 	void (*cb_fn)(struct _apml_msg_ *msg);
 	void *ptr_arg;
 	uint32_t ui32_arg;
-} __packed __aligned(4) apml_msg;
+} __packed apml_msg;
 
 uint8_t TSI_read(uint8_t bus, uint8_t addr, uint8_t command, uint8_t *read_data);
 uint8_t TSI_write(uint8_t bus, uint8_t addr, uint8_t command, uint8_t write_data);
