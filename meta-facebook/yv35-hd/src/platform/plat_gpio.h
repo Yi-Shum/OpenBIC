@@ -80,8 +80,8 @@
 			gpio_name_to_num(BOARD_ID5) gpio_name_to_num(BOARD_ID4)                    \
 				gpio_name_to_num(Reserve_GPIOM6) gpio_name_to_num(Reserve_GPIOM7)
 #define name_gpioN                                                                                 \
-	gpio_name_to_num(SGPIO_BMC_CLK_R) gpio_name_to_num(SGPIO_BMC_LD_R_N)                       \
-		gpio_name_to_num(SGPIO_BMC_DOUT_R) gpio_name_to_num(SGPIO_BMC_DIN)                 \
+	gpio_name_to_num(Reserve_GPION0) gpio_name_to_num(Reserve_GPION1)                          \
+		gpio_name_to_num(Reserve_GPION2) gpio_name_to_num(Reserve_GPION3)                  \
 			gpio_name_to_num(Reserve_GPION4) gpio_name_to_num(Reserve_GPION5)          \
 				gpio_name_to_num(Reserve_GPION6) gpio_name_to_num(Reserve_GPION7)
 #define name_gpioO                                                                                 \

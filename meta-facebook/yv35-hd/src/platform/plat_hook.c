@@ -39,10 +39,7 @@ bool pre_nvme_read(uint8_t sensor_num, void *args)
 {
 	if (!args)
 		return false;
-	if (!tca9548_select_chan(sensor_num, (struct tca9548 *)args))
-		return false;
-
-	return true;
+	return tca9548_select_chan(sensor_num, (struct tca9548 *)args);
 }
 
 bool pre_raa229621_read(uint8_t sensor_num, void *args)

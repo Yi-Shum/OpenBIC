@@ -36,7 +36,6 @@ sensor_cfg plat_sensor_config[] = {
 	// { SENSOR_NUM_TEMP_CPU, sensor_dev_amd_cpu_temp, I2C_BUS10, TSI_ADDR, CPU_TEMP_OFFSET,
 	//   post_access, 0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	//   NULL },
-	//   0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, NULL },
 	// { SENSOR_NUM_TEMP_DIMM_A, sensor_dev_amd_dimm_temp, I2C_BUS10, APML_ADDR, NULL, post_access,
 	//   0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, NULL },
 	// { SENSOR_NUM_TEMP_DIMM_B, sensor_dev_amd_dimm_temp, I2C_BUS10, APML_ADDR, NULL, post_access,
@@ -70,6 +69,7 @@ sensor_cfg plat_sensor_config[] = {
 	// { SENSOR_NUM_TEMP_DIMM_I, sensor_dev_amd_dimm_pwr, I2C_BUS10, APML_ADDR, NULL, post_access,
 	//   0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, NULL },
 	// { SENSOR_NUM_TEMP_DIMM_K, sensor_dev_amd_dimm_pwr, I2C_BUS10, APML_ADDR, NULL, post_access,
+	//   0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, NULL },
 
 	/* adc voltage */
 	{ SENSOR_NUM_VOL_P12V_STBY, sensor_dev_ast_adc, ADC_PORT0, NONE, NONE, stby_access, 66, 10,

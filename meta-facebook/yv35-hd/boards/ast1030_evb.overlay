@@ -9,10 +9,10 @@
 
 &adc1 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_adc9_default &pinctrl_adc10_default
-		&pinctrl_adc11_default &pinctrl_adc12_default
-		&pinctrl_adc13_default &pinctrl_adc14_default
-		&pinctrl_adc15_default>;
+	pinctrl-0 = <&pinctrl_adc8_default &pinctrl_adc9_default
+		&pinctrl_adc10_default &pinctrl_adc11_default
+		&pinctrl_adc12_default &pinctrl_adc13_default
+		&pinctrl_adc14_default>;
 };
 
 &jtag1{
@@ -59,7 +59,7 @@
 
 &i2c7 {
 	pinctrl-0 = <&pinctrl_i2c7_default>;
-	clock-frequency = <I2C_BITRATE_FAST>;
+	clock-frequency = <I2C_BITRATE_FAST_PLUS>;
 	status = "okay";
 
 	ipmb7: ipmb@20 {
@@ -75,7 +75,7 @@
 
 &i2c8 {
 	pinctrl-0 = <&pinctrl_i2c8_default>;
-	clock-frequency = <I2C_BITRATE_FAST>;
+	clock-frequency = <I2C_BITRATE_FAST_PLUS>;
 	status = "okay";
 
 	ipmb8: ipmb@20 {
@@ -107,7 +107,12 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
-/* todo: enable PCC to support 4-bytes post code reading(in zephyr kernel v00.01.05) */
+&i2c13 {
+	pinctrl-0 = <&pinctrl_i2c13_default>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
 &espi {
 	status = "okay";
 
@@ -162,25 +167,12 @@
 	};
 };
 
-&fmc_cs1 {
-	status = "disabled";
-	spi-max-buswidth = <4>;
-	spi-max-frequency = <50000000>;
-};
-
 &spi1 {
 	status = "okay";
 };
 
 &spi1_cs0 {
 	status = "okay";
-	spi-max-buswidth = <4>;
-	spi-max-frequency = <50000000>;
-	re-init-support;
-};
-
-&spi1_cs1 {
-	status = "disabled";
 	spi-max-buswidth = <4>;
 	spi-max-frequency = <50000000>;
 	re-init-support;
@@ -197,17 +189,9 @@
 	re-init-support;
 };
 
-&spi2_cs1 {
-	status = "disabled";
-	spi-max-buswidth = <4>;
-	spi-max-frequency = <50000000>;
-	re-init-support;
-};
-
 &wdt0 {
   status = "okay";
 };
-
 
 &wdt1 {
 	status = "okay";
