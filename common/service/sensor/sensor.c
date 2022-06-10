@@ -55,6 +55,9 @@ SENSOR_DRIVE_INIT_DECLARE(xdpe15284);
 SENSOR_DRIVE_INIT_DECLARE(ltc4282);
 SENSOR_DRIVE_INIT_DECLARE(tmp431);
 SENSOR_DRIVE_INIT_DECLARE(pmic);
+SENSOR_DRIVE_INIT_DECLARE(ina233);
+SENSOR_DRIVE_INIT_DECLARE(isl69254iraz_t);
+SENSOR_DRIVE_INIT_DECLARE(max16550a);
 SENSOR_DRIVE_INIT_DECLARE(raa229621);
 SENSOR_DRIVE_INIT_DECLARE(nct7718w);
 
@@ -62,14 +65,25 @@ struct sensor_drive_api {
 	enum SENSOR_DEV dev;
 	uint8_t (*init)(uint8_t);
 } sensor_drive_tbl[] = {
-	SENSOR_DRIVE_TYPE_INIT_MAP(tmp75),    SENSOR_DRIVE_TYPE_INIT_MAP(ast_adc),
-	SENSOR_DRIVE_TYPE_INIT_MAP(isl69259), SENSOR_DRIVE_TYPE_INIT_MAP(nvme),
-	SENSOR_DRIVE_TYPE_INIT_MAP(mp5990),   SENSOR_DRIVE_TYPE_INIT_MAP(isl28022),
-	SENSOR_DRIVE_TYPE_INIT_MAP(pex89000), SENSOR_DRIVE_TYPE_INIT_MAP(intel_peci),
-	SENSOR_DRIVE_TYPE_INIT_MAP(pch),      SENSOR_DRIVE_TYPE_INIT_MAP(adm1278),
-	SENSOR_DRIVE_TYPE_INIT_MAP(tps53689), SENSOR_DRIVE_TYPE_INIT_MAP(xdpe15284),
-	SENSOR_DRIVE_TYPE_INIT_MAP(ltc4282),  SENSOR_DRIVE_TYPE_INIT_MAP(tmp431),
-	SENSOR_DRIVE_TYPE_INIT_MAP(pmic),     SENSOR_DRIVE_TYPE_INIT_MAP(raa229621),
+	SENSOR_DRIVE_TYPE_INIT_MAP(tmp75),
+	SENSOR_DRIVE_TYPE_INIT_MAP(ast_adc),
+	SENSOR_DRIVE_TYPE_INIT_MAP(isl69259),
+	SENSOR_DRIVE_TYPE_INIT_MAP(nvme),
+	SENSOR_DRIVE_TYPE_INIT_MAP(mp5990),
+	SENSOR_DRIVE_TYPE_INIT_MAP(isl28022),
+	SENSOR_DRIVE_TYPE_INIT_MAP(pex89000),
+	SENSOR_DRIVE_TYPE_INIT_MAP(intel_peci),
+	SENSOR_DRIVE_TYPE_INIT_MAP(pch),
+	SENSOR_DRIVE_TYPE_INIT_MAP(adm1278),
+	SENSOR_DRIVE_TYPE_INIT_MAP(tps53689),
+	SENSOR_DRIVE_TYPE_INIT_MAP(xdpe15284),
+	SENSOR_DRIVE_TYPE_INIT_MAP(ltc4282),
+	SENSOR_DRIVE_TYPE_INIT_MAP(tmp431),
+	SENSOR_DRIVE_TYPE_INIT_MAP(pmic),
+	SENSOR_DRIVE_TYPE_INIT_MAP(ina233),
+	SENSOR_DRIVE_TYPE_INIT_MAP(isl69254iraz_t),
+	SENSOR_DRIVE_TYPE_INIT_MAP(max16550a),
+	SENSOR_DRIVE_TYPE_INIT_MAP(raa229621),
 	SENSOR_DRIVE_TYPE_INIT_MAP(nct7718w),
 };
 
@@ -274,22 +288,22 @@ __weak void pal_fix_sensor_config(void)
 	return;
 }
 
-bool stby_access(uint8_t sensor_number)
+bool stby_access(uint8_t sensor_num)
 {
 	return true;
 }
 
-bool dc_access(uint8_t sensor_number)
+bool dc_access(uint8_t sensor_num)
 {
 	return get_DC_on_delayed_status();
 }
 
-bool post_access(uint8_t sensor_number)
+bool post_access(uint8_t sensor_num)
 {
 	return get_post_status();
 }
 
-bool me_access(uint8_t sensor_number)
+bool me_access(uint8_t sensor_num)
 {
 	if (get_me_mode() == ME_NORMAL_MODE) {
 		return get_post_status();
@@ -354,6 +368,13 @@ static void drive_init(void)
 		sensor_cfg *p = sensor_config + i;
 		for (j = 0; j < drive_num; j++) {
 			if (p->type == sensor_drive_tbl[j].dev) {
+				if (p->pre_sensor_read_hook) {
+					if (p->pre_sensor_read_hook(
+						    p->num, p->pre_sensor_read_args) == false) {
+						printk("[%s] sensor %d pre sensor read failed!\n",
+						       __func__, p->num);
+					}
+				}
 				ret = sensor_drive_tbl[j].init(p->num);
 				if (ret != SENSOR_INIT_SUCCESS)
 					printf("sensor num %d initial fail, ret %d\n", p->num, ret);

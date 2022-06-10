@@ -155,17 +155,17 @@ bool common_add_sel_evt_record(common_addsel_msg_t *sel_msg)
 
 	bool ipmb_flag = true;
 	status = ipmb_read(msg, IPMB_inf_index_map[msg->InF_target]);
-	switch(status) {
-		case IPMB_ERROR_FAILURE:
-			ipmb_flag = false;
-			printf("Fail to post msg to InF_target 0x%x txqueue for addsel\n", msg->InF_target);
-			break;
-		case IPMB_ERROR_GET_MESSAGE_QUEUE:
-			ipmb_flag = false;
-			printf("No response from InF_target 0x%x for addsel\n", msg->InF_target);
-			break;
-		default:
-			break;
+	switch (status) {
+	case IPMB_ERROR_FAILURE:
+		ipmb_flag = false;
+		printf("Fail to post msg to InF_target 0x%x txqueue for addsel\n", msg->InF_target);
+		break;
+	case IPMB_ERROR_GET_MESSAGE_QUEUE:
+		ipmb_flag = false;
+		printf("No response from InF_target 0x%x for addsel\n", msg->InF_target);
+		break;
+	default:
+		break;
 	}
 
 	SAFE_FREE(msg);
@@ -249,8 +249,6 @@ void IPMI_handler(void *arug0, void *arug1, void *arug2)
 		if (pal_is_not_return_cmd(msg_cfg.buffer.netfn, msg_cfg.buffer.cmd)) {
 			;
 		} else {
-			ipmb_error status;
-
 			if (msg_cfg.buffer.completion_code != CC_SUCCESS) {
 				msg_cfg.buffer.data_len = 0;
 			} else if (msg_cfg.buffer.netfn == NETFN_OEM_1S_REQ) {
@@ -265,10 +263,14 @@ void IPMI_handler(void *arug0, void *arug1, void *arug2)
 				msg_cfg.buffer.data[2] = (IANA_ID >> 16) & 0xFF;
 			}
 
-			if (msg_cfg.buffer.InF_source == BMC_USB) {
+			switch (msg_cfg.buffer.InF_source) {
+#ifdef CONFIG_USB
+			case BMC_USB:
 				usb_write_by_ipmi(&msg_cfg.buffer);
-			} else if (msg_cfg.buffer.InF_source == HOST_KCS) {
+				break;
+#endif
 #ifdef CONFIG_IPMI_KCS_ASPEED
+			case HOST_KCS: {
 				uint8_t *kcs_buff;
 				kcs_buff = malloc(KCS_BUFF_SIZE * sizeof(uint8_t));
 				if (kcs_buff == NULL) { // allocate fail, retry allocate
@@ -300,11 +302,16 @@ void IPMI_handler(void *arug0, void *arug1, void *arug2)
 
 				kcs_write(kcs_buff, msg_cfg.buffer.data_len + 3);
 				SAFE_FREE(kcs_buff);
+				break;
+			}
 #endif
-			} else if (msg_cfg.buffer.InF_source == PLDM) {
+			case PLDM:
 				/* the message should be passed to source by pldm format */
 				send_msg_by_pldm(&msg_cfg);
-			} else {
+				break;
+			default: {
+#if MAX_IPMB_IDX
+				ipmb_error status;
 				status = ipmb_send_response(
 					&msg_cfg.buffer,
 					IPMB_inf_index_map[msg_cfg.buffer.InF_source]);
@@ -312,6 +319,9 @@ void IPMI_handler(void *arug0, void *arug1, void *arug2)
 					printf("IPMI_handler send IPMB resp fail status: %x",
 					       status);
 				}
+#endif
+				break;
+			}
 			}
 		}
 	}
@@ -326,5 +336,7 @@ void ipmi_init(void)
 			IPMI_handler, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&IPMI_thread, "IPMI_thread");
 
+#if MAX_IPMB_IDX
 	ipmb_init();
+#endif
 }

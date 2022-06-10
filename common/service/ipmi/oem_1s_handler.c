@@ -18,6 +18,7 @@
 #ifdef ENABLE_FAN
 #include "plat_fan.h"
 #endif
+#include "plat_ipmb.h"
 #include "power_status.h"
 #include "pmbus.h"
 #include "altera.h"
@@ -32,7 +33,7 @@ __weak void OEM_1S_MSG_OUT(ipmi_msg *msg)
 	if (msg == NULL) {
 		return;
 	}
-
+#if MAX_IPMB_IDX
 	uint8_t target_IF;
 	ipmb_error status;
 	ipmi_msg *bridge_msg = NULL;
@@ -114,7 +115,9 @@ __weak void OEM_1S_MSG_OUT(ipmi_msg *msg)
 			printf("OEM_MSG_OUT send IPMB resp fail status: %x", status);
 		}
 	}
-
+#else
+	msg->completion_code = CC_UNSPECIFIED_ERROR;
+#endif
 	return;
 }
 
@@ -272,8 +275,10 @@ __weak void OEM_1S_GET_FW_VERSION(ipmi_msg *msg)
 
 	uint8_t component;
 	component = msg->data[0];
+#if MAX_IPMB_IDX
 	ipmb_error status;
 	ipmi_msg *bridge_msg;
+#endif
 
 #ifdef ENABLE_ISL69260
 	I2C_MSG i2c_msg;
@@ -295,6 +300,7 @@ __weak void OEM_1S_GET_FW_VERSION(ipmi_msg *msg)
 		msg->data_len = 7;
 		msg->completion_code = CC_SUCCESS;
 		break;
+#if MAX_IPMB_IDX
 	case COMPNT_ME:
 		bridge_msg = (ipmi_msg *)malloc(sizeof(ipmi_msg));
 		if (bridge_msg == NULL) {
@@ -325,6 +331,7 @@ __weak void OEM_1S_GET_FW_VERSION(ipmi_msg *msg)
 			SAFE_FREE(bridge_msg);
 		}
 		break;
+#endif
 #ifdef ENABLE_ISL69260
 	case COMPNT_PVCCIN:
 	case COMPNT_PVCCFA_EHV_FIVRA:
@@ -734,12 +741,6 @@ __weak void OEM_1S_ACCURACY_SENSOR_READING(ipmi_msg *msg)
 		msg->completion_code = CC_SUCCESS;
 		break;
 	case SENSOR_READ_4BYTE_ACUR_SUCCESS:
-		res->decimal = (int32_t)reading;
-		if (reading < 0) {
-			res->fraction = (int32_t)((res->decimal - reading + 0.0005) * 1000);
-		} else {
-			res->fraction = (int32_t)((reading - res->decimal + 0.0005) * 1000);
-		}
 		memcpy(msg->data, &reading, sizeof(reading));
 		msg->data[4] = sensor_report_status;
 		msg->data_len = 5;
@@ -1190,6 +1191,28 @@ __weak void OEM_1S_INFORM_PEER_SLED_CYCLE(ipmi_msg *msg)
 	return;
 }
 
+__weak void OEM_1S_PEX_FLASH_READ(ipmi_msg *msg)
+{
+	return;
+}
+
+__weak void OEM_1S_GET_FPGA_USER_CODE(ipmi_msg *msg)
+{
+	return;
+}
+
+__weak void OEM_1S_GET_CARD_TYPE(ipmi_msg *msg)
+{
+	if (msg == NULL) {
+		printf("%s failed due to parameter *msg is NULL\n", __func__);
+		return;
+	}
+
+	msg->data_len = 0;
+	msg->completion_code = CC_INVALID_CMD;
+	return;
+}
+
 void IPMI_OEM_1S_handler(ipmi_msg *msg)
 {
 	if (msg == NULL) {
@@ -1285,6 +1308,15 @@ void IPMI_OEM_1S_handler(ipmi_msg *msg)
 #endif
 	case CMD_OEM_1S_INFORM_PEER_SLED_CYCLE:
 		OEM_1S_INFORM_PEER_SLED_CYCLE(msg);
+		break;
+	case CMD_OEM_1S_PEX_FLASH_READ:
+		OEM_1S_PEX_FLASH_READ(msg);
+		break;
+	case CMD_OEM_1S_GET_FPGA_USER_CODE:
+		OEM_1S_GET_FPGA_USER_CODE(msg);
+		break;
+	case CMD_OEM_1S_GET_CARD_TYPE:
+		OEM_1S_GET_CARD_TYPE(msg);
 		break;
 	default:
 		printf("Invalid OEM message, netfn(0x%x) cmd(0x%x)\n", msg->netfn, msg->cmd);

@@ -3,13 +3,16 @@
 #include "sensor.h"
 #include "libutil.h"
 #include "ipmi.h"
+#include "plat_ipmb.h"
+
+#define VALID_READING 0x40
 
 uint8_t pch_read(uint8_t sensor_num, int *reading)
 {
 	if (!reading || (sensor_num > SENSOR_NUM_MAX)) {
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
-
+#if MAX_IPMB_IDX
 	ipmb_error status;
 	ipmi_msg *bridge_msg;
 	bridge_msg = (ipmi_msg *)malloc(sizeof(ipmi_msg));
@@ -37,7 +40,17 @@ uint8_t pch_read(uint8_t sensor_num, int *reading)
 			return SENSOR_FAIL_TO_ACCESS;
 		}
 
-		if (bridge_msg->completion_code == CC_SUCCESS) {
+		/* BIC reads the PCH sensors from ME through IPMI command.
+		 * The completion code, the scanning and reading state should be checked.
+		 * If the completion code is not successfully or the scanning and reading state are disabled or unavailable,
+		 * BIC returns the unspecified error completion code.
+		 * Follow the IPMI spec table 35 - get sensor reading command,
+		 * the byte 3 of response data is
+		 * bit-6: 0b means sensor scanning disabled
+		 * bit-5: 1b means reading state unavailable
+		 */
+		if ((bridge_msg->completion_code == CC_SUCCESS) &&
+		    ((bridge_msg->data[1] & (BIT(5) | BIT(6))) == VALID_READING)) {
 			sensor_val *sval = (sensor_val *)reading;
 			memset(sval, 0, sizeof(sensor_val));
 			sval->integer = bridge_msg->data[0];
@@ -53,6 +66,7 @@ uint8_t pch_read(uint8_t sensor_num, int *reading)
 
 	printf("pch_read retry read fail\n");
 	SAFE_FREE(bridge_msg);
+#endif
 	return SENSOR_UNSPECIFIED_ERROR;
 }
 

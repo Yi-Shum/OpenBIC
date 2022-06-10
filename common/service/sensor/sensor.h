@@ -14,8 +14,6 @@
 #define GET_FROM_CACHE 0x00
 #define GET_FROM_SENSOR 0x01
 
-#define MAX_SENSOR_SIZE 60
-
 #define SENSOR_NULL 0xFF
 #define SENSOR_FAIL 0xFF
 #define SENSOR_NUM_MAX 0xFF
@@ -60,8 +58,11 @@ enum SENSOR_DEV {
 	sensor_dev_ast_fan = 0x16,
 	sensor_dev_tmp431 = 0x18,
 	sensor_dev_pmic = 0x19,
-	sensor_dev_raa229621 = 0x20,
-	sensor_dev_nct7718w = 0x21,
+	sensor_dev_ina233 = 0x20,
+	sensor_dev_isl69254iraz_t = 0x21,
+	sensor_dev_max16550a = 0x22,
+	sensor_dev_raa229621 = 0x23,
+	sensor_dev_nct7718w = 0x24,
 	sensor_dev_max
 };
 
@@ -136,6 +137,7 @@ typedef struct _sensor_cfg__ {
 	void *init_args;
 
 	/* if there is new parameter should be added, please add on above */
+	void *priv_data;
 	uint8_t retry;
 	uint8_t (*init)(uint8_t, int *);
 	uint8_t (*read)(uint8_t, int *);
@@ -223,6 +225,14 @@ typedef struct _pmic_init_arg {
 	uint8_t smbus_bus_identifier;
 	uint8_t smbus_addr;
 } pmic_init_arg;
+
+typedef struct _ina233_init_arg_ {
+	bool is_init;
+} ina233_init_arg;
+
+typedef struct _max16550a_init_arg_ {
+	float r_load;
+} max16550a_init_arg;
 
 extern bool enable_sensor_poll_thread;
 extern uint8_t SDR_NUM;
