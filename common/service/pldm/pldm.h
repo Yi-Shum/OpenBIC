@@ -7,6 +7,7 @@ extern "C" {
 
 #include "mctp.h"
 #include "pldm_base.h"
+#include "pldm_fw_update.h"
 #include "pldm_oem.h"
 #include <stdint.h>
 #include <sys/printk.h>

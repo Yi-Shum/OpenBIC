@@ -29,6 +29,8 @@ struct _pldm_handler_query_entry {
 };
 
 static struct _pldm_handler_query_entry query_tbl[] = { { PLDM_TYPE_BASE, pldm_base_handler_query },
+							{ PLDM_TYPE_FW_UPDATE,
+							  pldm_fw_update_handler_query },
 							{ PLDM_TYPE_OEM, pldm_oem_handler_query } };
 
 static K_MUTEX_DEFINE(wait_recv_resp_mutex);
