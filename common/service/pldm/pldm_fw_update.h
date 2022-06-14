@@ -23,6 +23,37 @@ enum {
 	PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE = 0x1D,
 };
 
+enum cur_status {
+	STAT_IDLE,
+	STAT_LEARN_COMP,
+	STAT_RDY_XFER,
+	STAT_DOWNLOAD,
+	STAT_VERIFY,
+	STAT_APPLY,
+	STAT_ACTIVATE,
+};
+
+enum comp_class {
+	COMP_CLASS_UNKNOWN = 0x0000,
+	COMP_CLASS_OTHER,
+	COMP_CLASS_DRIVER,
+	COMP_CLASS_CONFIG_SW,
+	COMP_CLASS_APP_SW,
+	COMP_CLASS_INST,
+	COMP_CLASS_FW_BIOS,
+	COMP_CLASS_DIA_SW,
+	COMP_CLASS_OPE_SYS,
+	COMP_CLASS_MID,
+	COMP_CLASS_FW,
+	COMP_CLASS_BIOS_FCODE,
+	COMP_CLASS_SUP_SERV_PACK,
+	COMP_CLASS_SW_BUND,
+
+	/* 0x8000 ~ 0xfffe reserved for vendor */
+
+	COMP_CLASS_DS_DEV = 0xFFFF,
+};
+
 enum str_type {
 	STR_TYPE_UNKNOWN,
 	STR_TYPE_ASCII,
@@ -84,6 +115,17 @@ struct _pass_comp_table_resp {
 	uint8_t completion_code;
 	uint8_t comp_resp;
 	uint8_t comp_resp_code;
+} __attribute__((packed));
+
+struct _get_status_resp {
+	uint8_t completion_code;
+	uint8_t cur_state;
+	uint8_t pre_state;
+	uint8_t aux_state;
+	uint8_t aux_state_status;
+	uint8_t prog_percent;
+	uint8_t reason_code;
+	uint32_t update_op_flags_en;
 } __attribute__((packed));
 
 uint8_t pldm_fw_update_handler_query(uint8_t code, void **ret_fn);
