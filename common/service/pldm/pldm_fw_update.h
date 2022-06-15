@@ -3,6 +3,40 @@
 
 #include "pldm.h"
 #include <stdint.h>
+#include "plat_version.h"
+
+enum desc_type {
+	/* init */
+	DESC_TYPE_PCI_VEND_ID = 0x0000,
+	DESC_TYPE_IANA_ID = 0x0001,
+	DESC_TYPE_UUID = 0x0002,
+	DESC_TYPE_PNP_VEND_ID = 0x0003,
+	DESC_TYPE_ACPI_VEND_ID = 0x0004,
+	DESC_TYPE_IEEE_ASSIGN_COMPANY_ID = 0x0005,
+	DESC_TYPE_SCSI_VEND_ID = 0x0006,
+
+	/* additional */
+	DESC_TYPE_PCI_DEV_ID = 0x0100,
+	DESC_TYPE_PCI_SUB_VEND_ID = 0x0101,
+	DESC_TYPE_PCI_SUB_ID = 0x0102,
+	DESC_TYPE_PCI_REV_ID = 0x0103,
+	DESC_TYPE_PNP_PROD_ID = 0x0104,
+	DESC_TYPE_ACPI_PROD_ID = 0x0105,
+	DESC_TYPE_ASCII_MODEL_NUM_L = 0x0106,
+	DESC_TYPE_ASCII_MODEL_NUM_S = 0x0107,
+	DESC_TYPE_SCSI_PROD_ID = 0x0108,
+	DESC_TYPE_UBM_CTRL_DEV_CODE = 0x0109,
+	DESC_TYPE_VEND_DEF = 0xFFFF,
+};
+
+typedef struct _descriptors {
+	uint16_t desc_type;
+	uint16_t desc_len;
+	uint8_t *desc_data;
+} __attribute__((packed)) desc_cfg_t;
+
+#define BIC_FW_DESC_CNT 1
+#define BIC_FW_DESC0_TYPE DESC_TYPE_IANA_ID
 
 enum {
 	/* inventory commands */
@@ -83,6 +117,13 @@ enum comp_resp_code {
 	cc_0A,
 	cc_0B,
 };
+
+struct _query_dev_id_resp {
+	uint8_t completion_code;
+	uint32_t dev_id_len;
+	uint8_t desc_cnt;
+	uint8_t descriptors;
+} __attribute__((packed));
 
 struct _req_update_req {
 	uint32_t max_trans_size;

@@ -1,6 +1,7 @@
 #include "pldm.h"
 #include "ipmi.h"
 #include <logging/log.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/printk.h>
 #include <sys/slist.h>
@@ -11,10 +12,12 @@ LOG_MODULE_DECLARE(pldm, LOG_LEVEL_DBG);
 
 static uint8_t cur_state = STAT_IDLE;
 
-static uint8_t get_cur_status()
-{
-	return cur_state;
-}
+desc_cfg_t bic_descriptor_config[] = {
+	/* init desc: Should atlast have 1 */
+	{ DESC_TYPE_IANA_ID, 4, (uint8_t *)IANA_ID },
+
+	/* additional desc: Optional */
+};
 
 static uint8_t query_device_identifiers(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t *resp,
 					uint16_t *resp_len, void *ext_params)
@@ -22,6 +25,28 @@ static uint8_t query_device_identifiers(void *mctp_inst, uint8_t *buf, uint16_t 
 	if (!mctp_inst || !buf || !resp || !resp_len)
 		return PLDM_ERROR;
 
+	struct _query_dev_id_resp *resp_p = (struct _query_dev_id_resp *)resp;
+
+	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
+
+	resp_p->desc_cnt = ARRAY_SIZE(bic_descriptor_config);
+	resp_p->dev_id_len = 0;
+	uint8_t *des_p = &resp_p->descriptors;
+
+	for (int i = 0; i < resp_p->desc_cnt; i++) {
+		*((uint16_t *)des_p) = bic_descriptor_config[i].desc_type;
+		des_p += 2;
+		*((uint16_t *)des_p) = bic_descriptor_config[i].desc_len;
+		des_p += 2;
+		memcpy(des_p, bic_descriptor_config[i].desc_data,
+		       bic_descriptor_config[i].desc_len);
+		des_p += bic_descriptor_config[i].desc_len;
+
+		resp_p->dev_id_len += (4 + bic_descriptor_config[i].desc_len);
+	}
+
+	*resp_len = 6 + resp_p->dev_id_len;
 	return PLDM_SUCCESS;
 }
 
@@ -142,7 +167,7 @@ static uint8_t get_status(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t *
 
 	static uint8_t pre_state = STAT_IDLE;
 	resp_p->pre_state = pre_state;
-	resp_p->cur_state = get_cur_status();
+	resp_p->cur_state = cur_state;
 	resp_p->aux_state = 1; //TBD: not support now
 	resp_p->aux_state_status = 0x00; //TBD: not support now
 	resp_p->prog_percent = 0x00; //TBD: not support now
