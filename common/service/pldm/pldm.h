@@ -125,6 +125,13 @@ typedef struct _pldm {
                        layer */
 } pldm_t;
 
+typedef struct _pld_recv_resp_arg {
+	struct k_sem recv_sem;
+	uint8_t *rbuf;
+	uint16_t rbuf_len;
+	uint16_t return_len;
+} pld_recv_resp_arg;
+
 /* the pldm command handler */
 uint8_t mctp_pldm_cmd_handler(void *mctp_p, uint8_t *buf, uint32_t len, mctp_ext_params ext_params);
 
@@ -132,6 +139,8 @@ uint8_t mctp_pldm_cmd_handler(void *mctp_p, uint8_t *buf, uint32_t len, mctp_ext
 uint8_t mctp_pldm_send_msg(void *mctp_p, pldm_msg *msg);
 
 pldm_t *pldm_init(void *interface, uint8_t user_idx);
+
+uint16_t mctp_pldm_read(void *mctp_p, pldm_msg *msg, uint8_t *rbuf, uint16_t rbuf_len);
 
 #ifdef __cplusplus
 }
