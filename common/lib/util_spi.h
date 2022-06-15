@@ -13,6 +13,8 @@
 #define SECTOR_SZ_1K 0x00400
 
 #define FW_UPDATE_DEBUG 0
+#define SECTOR_END_FLAG BIT(7)
+#define NOT_RESET_FLAG BIT(0)
 
 enum DEVICE_POSITIONS {
 	DEVSPI_FMC_CS0,
@@ -23,7 +25,7 @@ enum DEVICE_POSITIONS {
 	DEVSPI_SPI2_CS1,
 };
 
-uint8_t fw_update(uint32_t offset, uint16_t msg_len, uint8_t *msg_buf, bool sector_end,
+uint8_t fw_update(uint32_t offset, uint16_t msg_len, uint8_t *msg_buf, uint8_t flag,
 		  uint8_t flash_position);
 
 int pal_get_bios_flash_position();

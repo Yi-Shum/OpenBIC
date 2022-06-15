@@ -7,6 +7,7 @@
 #include <sys/printk.h>
 #include <sys/slist.h>
 #include <zephyr.h>
+#include "libutil.h"
 
 LOG_MODULE_REGISTER(pldm);
 
@@ -84,6 +85,64 @@ static void pldm_msg_timeout_monitor(void *dummy0, void *dummy1, void *dummy2)
 
 		pldm_msg_timeout_check(&wait_recv_resp_list, &wait_recv_resp_mutex);
 	}
+}
+
+void pldm_read_resp_handler(void *args, uint8_t *rbuf, uint16_t rlen)
+{
+	if (!args || !rbuf || !rlen)
+		return;
+
+	pld_recv_resp_arg *recv_arg = (pld_recv_resp_arg *)args;
+
+	recv_arg->return_len = (recv_arg->rbuf_len > rlen) ? rlen : recv_arg->rbuf_len;
+	memcpy(recv_arg->rbuf, rbuf, recv_arg->return_len);
+
+	k_sem_give(&recv_arg->recv_sem);
+}
+
+/*
+ * The return value is the read length from PLDM device
+ */
+uint16_t mctp_pldm_read(void *mctp_p, pldm_msg *msg, uint8_t *rbuf, uint16_t rbuf_len)
+{
+	if (!mctp_p || !msg || !rbuf || !rbuf_len)
+		return 0;
+
+	mctp *mctp_inst = (mctp *)mctp_p;
+	msg->ext_params.type = mctp_inst->medium_type;
+	msg->ext_params.smbus_ext_params.addr = mctp_inst->medium_conf.smbus_conf.addr;
+
+	uint16_t ret = 0;
+	pld_recv_resp_arg *recv_arg = malloc(sizeof(pld_recv_resp_arg));
+	if (recv_arg == NULL) {
+		LOG_WRN("Allocate memory failed\n");
+		return 0;
+	}
+
+	memset(recv_arg, 0, sizeof(pld_recv_resp_arg));
+	recv_arg->rbuf = rbuf;
+	recv_arg->rbuf_len = rbuf_len;
+	if (k_sem_init(&recv_arg->recv_sem, 0, 1)) {
+		LOG_WRN("Initialize semaphore failed!\n");
+		goto error;
+	}
+
+	msg->recv_resp_cb_fn = pldm_read_resp_handler;
+	msg->recv_resp_cb_args = (void *)recv_arg;
+	if (mctp_pldm_send_msg(mctp_p, msg) == PLDM_ERROR) {
+		LOG_WRN("mctp_pldm_send_msg failed!\n");
+		goto error;
+	}
+
+	if (k_sem_take(&recv_arg->recv_sem, K_MSEC(PLDM_MSG_TIMEOUT_MS))) {
+		LOG_WRN("Wait response timeout\n");
+		goto error;
+	}
+
+	ret = recv_arg->return_len;
+error:
+	SAFE_FREE(recv_arg);
+	return ret;
 }
 
 static uint8_t pldm_resp_msg_process(mctp *mctp_inst, uint8_t *buf, uint32_t len,

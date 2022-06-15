@@ -38,8 +38,7 @@ typedef struct _descriptors {
 #define BIC_FW_DESC_CNT 1
 #define BIC_FW_DESC0_TYPE DESC_TYPE_IANA_ID
 
-enum {
-	/* inventory commands */
+typedef enum {
 	PLDM_FW_UPDATE_CMD_CODE_QUERY_DEVICE_IDENTIFIERS = 0x01,
 	PLDM_FW_UPDATE_CMD_CODE_GET_FIRMWARE_PARAMETERS = 0x02,
 
@@ -55,16 +54,21 @@ enum {
 	PLDM_FW_UPDATE_CMD_CODE_GET_STATUS = 0x1B,
 	PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE_COMPONENT = 0x1C,
 	PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE = 0x1D,
-};
+} PLDM_FW_UPDATE_CMD;
+
+typedef struct _req_fw_update_date {
+	uint32_t offset;
+	uint32_t length;
+} req_fw_update_date;
 
 enum cur_status {
-	STAT_IDLE,
-	STAT_LEARN_COMP,
-	STAT_RDY_XFER,
-	STAT_DOWNLOAD,
-	STAT_VERIFY,
-	STAT_APPLY,
-	STAT_ACTIVATE,
+	STATE_IDLE,
+	STATE_LEARN_COMP,
+	STATE_RDY_XFER,
+	STATE_DOWNLOAD,
+	STATE_VERIFY,
+	STATE_APPLY,
+	STATE_ACTIVATE,
 };
 
 enum comp_class {
@@ -158,6 +162,37 @@ struct _pass_comp_table_resp {
 	uint8_t comp_resp_code;
 } __attribute__((packed));
 
+typedef struct _update_comp_req {
+	uint16_t comp_class;
+	uint16_t comp_identifier;
+	uint8_t comp_class_idx;
+	uint32_t comp_comparison_stamp;
+	uint32_t comp_image_size;
+	uint32_t update_option_flag;
+	uint8_t comp_version_string_type;
+	uint8_t comp_version_string_len;
+	uint8_t comp_version_string;
+} update_comp_req;
+
+typedef struct _update_comp_resp {
+	uint8_t completion_code;
+	uint8_t comp_compatibility_resp;
+	uint8_t comp_compatibility_resp_code;
+	uint32_t update_option_flag_enabled;
+	uint16_t estimate_time_before_update;
+} update_comp_resp;
+
+typedef struct _activate_firmware_resp {
+	uint8_t completion_code;
+	uint16_t estimate_time;
+} activate_firmware_resp;
+
+typedef struct _cancel_update_resp {
+	uint8_t completion_code;
+	uint8_t non_function_comp;
+	uint64_t non_function_comp_bitmap;
+} cancel_update_resp;
+
 struct _get_status_resp {
 	uint8_t completion_code;
 	uint8_t cur_state;
@@ -170,5 +205,7 @@ struct _get_status_resp {
 } __attribute__((packed));
 
 uint8_t pldm_fw_update_handler_query(uint8_t code, void **ret_fn);
+uint16_t pldm_fw_update_read(void *mctp_p, PLDM_FW_UPDATE_CMD cmd, uint8_t *req, uint16_t req_len,
+			     uint8_t *rbuf, uint16_t rbuf_len);
 
 #endif
