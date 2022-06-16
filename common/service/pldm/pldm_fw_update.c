@@ -17,6 +17,9 @@
 #define PLDM_FW_UPDATE_STACK_SIZE 512
 #define UPDATE_THREAD_DELAY_SECOND 1
 
+#define TMP_ACTIVIE_COMP_SET_VER_STR "act_set_version"
+#define TMP_PENDING_COMP_SET_VER_STR "pen_set_version"
+
 LOG_MODULE_DECLARE(pldm, LOG_LEVEL_DBG);
 
 struct k_thread pldm_fw_update_thread;
@@ -27,6 +30,48 @@ static uint8_t pre_state = STAT_IDLE;
 static uint32_t comp_image_size;
 k_tid_t fw_update_tid;
 
+desc_cfg_t bic_descriptor_config[] = {
+	/* init desc: Should atlast have 1 */
+	{ DESC_TYPE_IANA_ID, 4, (uint8_t *)IANA_ID },
+
+	/* additional desc: Optional */
+};
+
+comp_parameters_t bic_parameters_config[] = {
+	{ COMP_CLASS_FW,
+	  0x0000,
+	  0x00,
+	  0x00000000,
+	  STR_TYPE_ASCII,
+	  MAX_VER_STR_LEN,
+	  { 0x32, 0x30, 0x32, 0x32, 0x30, 0x36, 0x31, 0x36 }, //20220616
+	  0x00000000,
+	  STR_TYPE_UNKNOWN,
+	  0x00,
+	  { 0 },
+	  0x8000,
+	  0x00000000 },
+};
+
+version_str_t version_str_set_config = {
+	{ 0x31, 0x00, 0x30, 0x00, 0x30 },
+	{ 0 } // act: 1.0.0 pend: none
+};
+
+version_str_t version_str_config[] = {
+	{ { 0x31, 0x00, 0x30, 0x00, 0x30 }, { 0 } }, // act: 1.0.0 pend: none
+};
+
+static void swaping(void *data, uint32_t num_byte)
+{
+	uint8_t *buff = data;
+	for (int i = 0; i < (num_byte / 2); i++) {
+		uint8_t tmp = *(buff + i);
+		*(buff + i) = *(buff + (num_byte - 1 - i));
+		*(buff + (num_byte - i - 1)) = tmp;
+	}
+}
+
 static void udpate_fail_handler(void *mctp_p)
 {
 	uint8_t req_data[3];
@@ -34,7 +79,7 @@ static void udpate_fail_handler(void *mctp_p)
 	uint16_t rbuf_len = 10;
 	uint8_t *rbuf = malloc(sizeof(uint8_t) * 10);
 	if (rbuf == NULL) {
-		LOG_WRN("Allocate memory failed\n");
+		LOG_WRN("%s: Allocate memory failed\n", __func__);
 		return;
 	}
 
@@ -63,13 +108,6 @@ static void udpate_fail_handler(void *mctp_p)
 	return;
 }
 
-desc_cfg_t bic_descriptor_config[] = {
-	/* init desc: Should atlast have 1 */
-	{ DESC_TYPE_IANA_ID, 4, (uint8_t *)IANA_ID },
-
-	/* additional desc: Optional */
-};
-
 void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 {
 	int status;
@@ -77,12 +115,12 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 	uint16_t rbuf_len = FW_UPDATE_BUF_SIZE;
 	uint8_t *rbuf = malloc(sizeof(uint8_t) * FW_UPDATE_BUF_SIZE);
 	if (rbuf == NULL) {
-		LOG_WRN("read buffer allocate memory failed\n");
+		LOG_WRN("%s: read buffer allocate memory failed\n", __func__);
 		goto error;
 	}
 	uint8_t *req_buf = malloc(sizeof(uint8_t) * REQUEST_BUF_LEN);
 	if (rbuf == NULL) {
-		LOG_WRN("request buffer allocate memory failed\n");
+		LOG_WRN("%s: request buffer allocate memory failed\n", __func__);
 		goto error;
 	}
 
@@ -122,7 +160,7 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE, req_buf,
 				       1, rbuf, rbuf_len);
 	if (read_len != 1 || rbuf[0] != PLDM_BASE_CODES_SUCCESS) {
-		LOG_WRN("Transfer complete fail\n");
+		LOG_WRN("%s: Transfer complete fail\n", __func__);
 		goto error;
 	}
 	pre_state = cur_state;
@@ -132,7 +170,7 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE, req_buf,
 				       1, rbuf, rbuf_len);
 	if (read_len != 1 || rbuf[0] != PLDM_BASE_CODES_SUCCESS) {
-		LOG_WRN("Transfer complete fail\n");
+		LOG_WRN("%s: Transfer complete fail\n", __func__);
 		goto error;
 	}
 	pre_state = cur_state;
@@ -144,7 +182,7 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_APPLY_COMPLETE, req_buf, 3,
 				       rbuf, rbuf_len);
 	if (read_len != 1 || rbuf[0] != PLDM_BASE_CODES_SUCCESS) {
-		LOG_WRN("Transfer complete fail\n");
+		LOG_WRN("%s: Transfer complete fail\n", __func__);
 		goto error;
 	}
 	pre_state = cur_state;
@@ -199,6 +237,68 @@ static uint8_t get_firmware_parameters(void *mctp_inst, uint8_t *buf, uint16_t l
 		return PLDM_ERROR;
 	}
 
+	struct _get_fw_parm_resp *resp_p = (struct _get_fw_parm_resp *)resp;
+
+	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
+
+	uint32_t cap_during_update = 0x7; //TBD: currently same as NIC config
+	swaping(&cap_during_update, 2);
+	resp_p->cap_during_update = cap_during_update;
+	uint16_t comp_cnt = ARRAY_SIZE(bic_parameters_config);
+	swaping(&comp_cnt, 2);
+	resp_p->comp_cnt = comp_cnt; // means 1 component count
+	resp_p->active_comp_img_set_ver_str_type = STR_TYPE_ASCII;
+	resp_p->active_comp_img_set_ver_str_len = MAX_VER_STR_LEN; // TBD: temparary set 16 bytes
+	resp_p->pend_comp_img_set_ver_str_type =
+		STR_TYPE_UNKNOWN; // currently not include pending component
+	resp_p->pend_comp_img_set_ver_str_len = 0X0; // currently not include pending component
+
+	*resp_len = (sizeof(struct _get_fw_parm_resp) - 1);
+
+	if (!resp_p->comp_cnt) {
+		LOG_WRN("%s: Component count shouldn't be 0", __func__);
+		resp_p->completion_code = PLDM_BASE_CODES_ERROR_INVALID_DATA;
+		*resp_len = 1;
+		goto end;
+	}
+
+	uint8_t *cur_resp = &resp_p->variables;
+	if (resp_p->active_comp_img_set_ver_str_len) {
+		memcpy(cur_resp, &version_str_set_config.act_version,
+		       resp_p->active_comp_img_set_ver_str_len);
+		cur_resp += resp_p->active_comp_img_set_ver_str_len;
+		*resp_len += resp_p->active_comp_img_set_ver_str_len;
+	}
+	if (resp_p->pend_comp_img_set_ver_str_len) {
+		memcpy(cur_resp, &version_str_set_config.pend_version,
+		       resp_p->pend_comp_img_set_ver_str_len);
+		cur_resp += resp_p->pend_comp_img_set_ver_str_len;
+		*resp_len += resp_p->pend_comp_img_set_ver_str_len;
+	}
+
+	/* ComponentParameterTable */
+	for (int i = 0; i < comp_cnt; i++) {
+		memcpy(cur_resp, &bic_parameters_config[i], sizeof(bic_parameters_config[i]));
+		cur_resp += sizeof(bic_parameters_config[i]);
+
+		*resp_len += sizeof(bic_parameters_config[i]);
+
+		if (bic_parameters_config[i].active_comp_ver_str_len) {
+			memcpy(cur_resp, &version_str_config[i].act_version,
+			       bic_parameters_config[i].active_comp_ver_str_len);
+			cur_resp += bic_parameters_config[i].active_comp_ver_str_len;
+			*resp_len += bic_parameters_config[i].active_comp_ver_str_len;
+		}
+		if (bic_parameters_config[i].pend_comp_ver_str_len) {
+			memcpy(cur_resp, &version_str_config[i].pend_version,
+			       bic_parameters_config[i].pend_comp_ver_str_len);
+			cur_resp += bic_parameters_config[i].pend_comp_ver_str_len;
+			*resp_len += bic_parameters_config[i].pend_comp_ver_str_len;
+		}
+	}
+
+end:
 	return PLDM_SUCCESS;
 }
 
@@ -249,7 +349,7 @@ static uint8_t pass_component_table(void *mctp_inst, uint8_t *buf, uint16_t len,
 
 	if (req_p->comp_class == 0xFFFF) {
 		if (req_p->comp_id > 0xFFF) {
-			printf("%s: Invalid component id for downstream device.\n", __func__);
+			LOG_WRN("%s: Invalid component id for downstream device.", __func__);
 			resp_p->completion_code = PLDM_BASE_CODES_ERROR_INVALID_DATA;
 			goto end;
 		}
@@ -265,8 +365,8 @@ static uint8_t pass_component_table(void *mctp_inst, uint8_t *buf, uint16_t len,
 			/* TBD: Update all downstream device */
 			;
 		} else {
-			printf("%s: Invalid component classification index for downstream device.\n",
-			       __func__);
+			LOG_WRN("%s: Invalid component classification index for downstream device.",
+				__func__);
 			resp_p->completion_code = PLDM_BASE_CODES_ERROR_INVALID_DATA;
 			goto end;
 		}
@@ -296,7 +396,7 @@ static uint8_t update_component(void *mctp_inst, uint8_t *buf, uint16_t len, uin
 	}
 
 	if (fw_update_tid != NULL && strcmp(k_thread_state_str(fw_update_tid), "dead") != 0) {
-		LOG_WRN("PLDM fw update thread is running!");
+		LOG_WRN("%s: PLDM fw update thread is running!", __func__);
 		return PLDM_ERROR;
 	}
 

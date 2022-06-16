@@ -1,9 +1,13 @@
+/* Design from "v1.1.0" pldm firmware update spec */
+
 #ifndef _PLDM_FW_UPDATE_H
 #define _PLDM_FW_UPDATE_H
 
 #include "pldm.h"
 #include <stdint.h>
 #include "plat_version.h"
+
+#define MAX_VER_STR_LEN 0x10
 
 enum desc_type {
 	/* init */
@@ -35,10 +39,34 @@ typedef struct _descriptors {
 	uint8_t *desc_data;
 } __attribute__((packed)) desc_cfg_t;
 
+typedef struct _comp_parameters {
+	uint16_t comp_class;
+	uint16_t comp_identifier;
+	uint8_t comp_class_idx;
+	uint32_t active_comp_comparison_stamp;
+	uint8_t active_comp_ver_str_type;
+	uint8_t active_comp_ver_str_len;
+	uint8_t active_comp_release_date[8];
+	uint32_t pend_comp_comparison_stamp;
+	uint8_t pend_comp_ver_str_type;
+	uint8_t pend_comp_ver_str_len;
+	uint8_t pend_comp_release_date[8];
+	uint16_t comp_activate_methods;
+	uint32_t cap_during_update;
+	uint8_t variables; // active + pend component version string
+} __attribute__((packed)) comp_parameters_t;
+
+typedef struct _version_str {
+	uint8_t act_version[MAX_VER_STR_LEN];
+	uint8_t pend_version[MAX_VER_STR_LEN];
+	;
+} __attribute__((packed)) version_str_t;
+
 #define BIC_FW_DESC_CNT 1
 #define BIC_FW_DESC0_TYPE DESC_TYPE_IANA_ID
 
 typedef enum {
+	/* inventory commands */
 	PLDM_FW_UPDATE_CMD_CODE_QUERY_DEVICE_IDENTIFIERS = 0x01,
 	PLDM_FW_UPDATE_CMD_CODE_GET_FIRMWARE_PARAMETERS = 0x02,
 
@@ -127,6 +155,17 @@ struct _query_dev_id_resp {
 	uint32_t dev_id_len;
 	uint8_t desc_cnt;
 	uint8_t descriptors;
+} __attribute__((packed));
+
+struct _get_fw_parm_resp {
+	uint8_t completion_code;
+	uint32_t cap_during_update;
+	uint16_t comp_cnt;
+	uint8_t active_comp_img_set_ver_str_type;
+	uint8_t active_comp_img_set_ver_str_len;
+	uint8_t pend_comp_img_set_ver_str_type;
+	uint8_t pend_comp_img_set_ver_str_len;
+	uint8_t variables; // active + pend component set version string + parameters
 } __attribute__((packed));
 
 struct _req_update_req {
