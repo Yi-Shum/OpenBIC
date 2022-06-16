@@ -12,23 +12,19 @@
 #include "libutil.h"
 
 #define FW_UPDATE_BUF_SIZE 256
-#define REQUEST_BUF_LEN 10
 #define FW_UPDATE_SIZE 0xE0
 #define PLDM_FW_UPDATE_STACK_SIZE 512
 #define UPDATE_THREAD_DELAY_SECOND 1
 
-#define TMP_ACTIVIE_COMP_SET_VER_STR "act_set_version"
-#define TMP_PENDING_COMP_SET_VER_STR "pen_set_version"
-
 LOG_MODULE_DECLARE(pldm, LOG_LEVEL_DBG);
 
+k_tid_t fw_update_tid;
 struct k_thread pldm_fw_update_thread;
 K_KERNEL_STACK_MEMBER(pldm_fw_update_stack, PLDM_FW_UPDATE_STACK_SIZE);
 
-static uint8_t cur_state = STAT_IDLE;
-static uint8_t pre_state = STAT_IDLE;
+static uint8_t cur_state = STATE_IDLE;
+static uint8_t pre_state = STATE_IDLE;
 static uint32_t comp_image_size;
-k_tid_t fw_update_tid;
 
 desc_cfg_t bic_descriptor_config[] = {
 	/* init desc: Should atlast have 1 */
@@ -79,22 +75,22 @@ static void udpate_fail_handler(void *mctp_p)
 	uint16_t rbuf_len = 10;
 	uint8_t *rbuf = malloc(sizeof(uint8_t) * 10);
 	if (rbuf == NULL) {
-		LOG_WRN("%s: Allocate memory failed\n", __func__);
+		LOG_WRN("%s: Allocate memory failed", __func__);
 		return;
 	}
 
 	switch (cur_state) {
-	case STAT_DOWNLOAD:
+	case STATE_DOWNLOAD:
 		req_data[0] = 0x0A;
 		read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE,
 					       req_data, 1, rbuf, rbuf_len);
 		break;
-	case STAT_VERIFY:
+	case STATE_VERIFY:
 		req_data[0] = 0x0A;
 		read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_VERIFY_COMPLETE,
 					       req_data, 1, rbuf, rbuf_len);
 		break;
-	case STAT_APPLY:
+	case STATE_APPLY:
 		req_data[0] = 0x0A;
 		req_data[1] = 0x00;
 		req_data[2] = 0x00;
@@ -112,89 +108,84 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 {
 	int status;
 	uint16_t read_len;
-	uint16_t rbuf_len = FW_UPDATE_BUF_SIZE;
-	uint8_t *rbuf = malloc(sizeof(uint8_t) * FW_UPDATE_BUF_SIZE);
-	if (rbuf == NULL) {
-		LOG_WRN("%s: read buffer allocate memory failed\n", __func__);
+	uint8_t *resp_buf = malloc(sizeof(uint8_t) * FW_UPDATE_BUF_SIZE);
+	if (resp_buf == NULL) {
+		LOG_WRN("%s: read buffer allocate memory failed", __func__);
 		goto error;
 	}
-	uint8_t *req_buf = malloc(sizeof(uint8_t) * REQUEST_BUF_LEN);
-	if (rbuf == NULL) {
-		LOG_WRN("%s: request buffer allocate memory failed\n", __func__);
-		goto error;
-	}
-
-	memset(req_buf, 0, REQUEST_BUF_LEN);
-	req_fw_update_date *req = (req_fw_update_date *)req_buf;
-	req->offset = 0;
+	req_fw_update_date req;
+	req.offset = 0;
 	uint8_t update_flag = 0;
 
-	while (req->offset < comp_image_size) {
-		if (req->offset + FW_UPDATE_SIZE < comp_image_size) {
-			req->length = FW_UPDATE_SIZE;
+	while (req.offset < comp_image_size) {
+		if (req.offset + FW_UPDATE_SIZE < comp_image_size) {
+			req.length = FW_UPDATE_SIZE;
 		} else {
-			req->length = comp_image_size - req->offset;
+			req.length = comp_image_size - req.offset;
 			update_flag = (SECTOR_END_FLAG | NOT_RESET_FLAG);
 		}
 		read_len =
 			pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_REQUEST_FIRMWARE_DATA,
-					    req_buf, sizeof(req_fw_update_date), rbuf, rbuf_len);
-		if (read_len != req->length + 1) {
-			LOG_WRN("Request firmware update fail, offset 0x%x, length 0x%x, return length 0x%x\n",
-				req->offset, req->length, read_len);
+					    (uint8_t *)&req, sizeof(req_fw_update_date), resp_buf,
+					    FW_UPDATE_BUF_SIZE);
+		if (read_len != req.length + 1) {
+			LOG_WRN("Request firmware update fail, offset 0x%x, length 0x%x, return length 0x%x",
+				req.offset, req.length, read_len);
 			goto error;
 		}
-		status = fw_update(req->offset, req->length, &rbuf[1], update_flag, DEVSPI_FMC_CS0);
+		status = fw_update(req.offset, req.length, &resp_buf[1], update_flag,
+				   DEVSPI_FMC_CS0);
 
 		if (status) {
-			LOG_WRN("fw_update fail, offset 0x%x, length 0x%x, status %d\n",
-				req->offset, req->length, status);
+			LOG_WRN("fw_update fail, offset 0x%x, length 0x%x, status %d", req.offset,
+				req.length, status);
 			goto error;
 		}
 
-		req->offset += req->length;
+		req.offset += req.length;
 	}
 
-	memset(req_buf, 0, REQUEST_BUF_LEN);
-	req_buf[0] = 0x00;
-	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE, req_buf,
-				       1, rbuf, rbuf_len);
-	if (read_len != 1 || rbuf[0] != PLDM_BASE_CODES_SUCCESS) {
-		LOG_WRN("%s: Transfer complete fail\n", __func__);
-		goto error;
-	}
-	pre_state = cur_state;
-	cur_state = STAT_VERIFY;
+	uint8_t req_buf[3] = { 0 };
 
 	req_buf[0] = 0x00;
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE, req_buf,
-				       1, rbuf, rbuf_len);
-	if (read_len != 1 || rbuf[0] != PLDM_BASE_CODES_SUCCESS) {
-		LOG_WRN("%s: Transfer complete fail\n", __func__);
+				       1, resp_buf, FW_UPDATE_BUF_SIZE);
+	if (read_len != 1 || resp_buf[0] != PLDM_BASE_CODES_SUCCESS) {
+		LOG_WRN("%s: Transfer complete fail", __func__);
 		goto error;
 	}
 	pre_state = cur_state;
-	cur_state = STAT_APPLY;
+	cur_state = STATE_VERIFY;
+
+	req_buf[0] = 0x00;
+	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_VERIFY_COMPLETE, req_buf, 1,
+				       resp_buf, FW_UPDATE_BUF_SIZE);
+	if (read_len != 1 || resp_buf[0] != PLDM_BASE_CODES_SUCCESS) {
+		LOG_WRN("%s: Transfer complete fail", __func__);
+		goto error;
+	}
+	pre_state = cur_state;
+	cur_state = STATE_APPLY;
 
 	req_buf[0] = 0x00;
 	req_buf[1] = 0x00;
 	req_buf[2] = 0x00;
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_APPLY_COMPLETE, req_buf, 3,
-				       rbuf, rbuf_len);
-	if (read_len != 1 || rbuf[0] != PLDM_BASE_CODES_SUCCESS) {
-		LOG_WRN("%s: Transfer complete fail\n", __func__);
+				       resp_buf, FW_UPDATE_BUF_SIZE);
+	if (read_len != 1 || resp_buf[0] != PLDM_BASE_CODES_SUCCESS) {
+		LOG_WRN("%s: Transfer complete fail", __func__);
 		goto error;
 	}
 	pre_state = cur_state;
-	cur_state = STAT_ACTIVATE;
+	cur_state = STATE_RDY_XFER;
 	comp_image_size = 0;
-	SAFE_FREE(rbuf);
+	SAFE_FREE(resp_buf);
 	return;
 
 error:
 	udpate_fail_handler(mctp_p);
 	comp_image_size = 0;
-	SAFE_FREE(rbuf);
+	SAFE_FREE(resp_buf);
 	return;
 }
 
@@ -208,8 +199,6 @@ static uint8_t query_device_identifiers(void *mctp_inst, uint8_t *buf, uint16_t 
 	struct _query_dev_id_resp *resp_p = (struct _query_dev_id_resp *)resp;
 
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
-	*resp_len = 1;
-
 	resp_p->desc_cnt = ARRAY_SIZE(bic_descriptor_config);
 	resp_p->dev_id_len = 0;
 	uint8_t *des_p = &resp_p->descriptors;
@@ -313,7 +302,6 @@ static uint8_t request_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8
 	struct _req_update_resp *resp_p = (struct _req_update_resp *)resp;
 
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
-	*resp_len = 1;
 
 	/* TBD: currently not support meta data */
 	resp_p->fw_dev_meta_data_len = 0x0000;
@@ -326,7 +314,7 @@ static uint8_t request_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8
 
 	*resp_len = sizeof(struct _req_update_resp);
 	pre_state = cur_state;
-	cur_state = STAT_LEARN_COMP;
+	cur_state = STATE_LEARN_COMP;
 	return PLDM_SUCCESS;
 }
 
@@ -341,7 +329,6 @@ static uint8_t pass_component_table(void *mctp_inst, uint8_t *buf, uint16_t len,
 	struct _pass_comp_table_resp *resp_p = (struct _pass_comp_table_resp *)resp;
 
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
-	*resp_len = 1;
 
 	/* TBD: Transfer flag may need to be varified here */
 
@@ -383,7 +370,7 @@ static uint8_t pass_component_table(void *mctp_inst, uint8_t *buf, uint16_t len,
 
 	*resp_len = sizeof(struct _pass_comp_table_resp);
 	pre_state = cur_state;
-	cur_state = STAT_RDY_XFER;
+	cur_state = STATE_RDY_XFER;
 end:
 	return PLDM_SUCCESS;
 }
@@ -415,6 +402,7 @@ static uint8_t update_component(void *mctp_inst, uint8_t *buf, uint16_t len, uin
 	resp_p->comp_compatibility_resp_code = 0x00;
 	resp_p->update_option_flag_enabled = req_p->update_option_flag;
 	resp_p->estimate_time_before_update = UPDATE_THREAD_DELAY_SECOND;
+	*resp_len = sizeof(update_comp_resp);
 
 	fw_update_tid =
 		k_thread_create(&pldm_fw_update_thread, pldm_fw_update_stack,
@@ -424,7 +412,7 @@ static uint8_t update_component(void *mctp_inst, uint8_t *buf, uint16_t len, uin
 	k_thread_name_set(&pldm_fw_update_thread, "pldm_fw_update_thread");
 
 	pre_state = cur_state;
-	cur_state = STAT_DOWNLOAD;
+	cur_state = STATE_DOWNLOAD;
 	return PLDM_SUCCESS;
 }
 
@@ -434,8 +422,14 @@ static uint8_t activate_firmware(void *mctp_inst, uint8_t *buf, uint16_t len, ui
 	if (!mctp_inst || !buf || !resp || !resp_len) {
 		return PLDM_ERROR;
 	}
+
+	activate_firmware_resp *resp_p = (activate_firmware_resp *)resp;
+	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	resp_p->estimate_time = 0;
+	*resp_len = sizeof(activate_firmware_resp);
+
 	pre_state = cur_state;
-	cur_state = STAT_ACTIVATE;
+	cur_state = STATE_ACTIVATE;
 	return PLDM_SUCCESS;
 }
 
@@ -458,6 +452,53 @@ static uint8_t get_status(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t *
 	resp_p->update_op_flags_en = 0x01; //force update enable
 
 	*resp_len = sizeof(struct _get_status_resp);
+	return PLDM_SUCCESS;
+}
+
+static uint8_t cancel_update_component(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t *resp,
+				       uint16_t *resp_len, void *ext_params)
+{
+	if (!mctp_inst || !buf || !resp || !resp_len) {
+		return PLDM_ERROR;
+	}
+
+	if (cur_state != STATE_DOWNLOAD) {
+		return PLDM_ERROR;
+	}
+
+	LOG_WRN("%s: Cancel update component!", __func__);
+	*resp = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
+
+	pre_state = cur_state;
+	cur_state = STATE_RDY_XFER;
+
+	return PLDM_SUCCESS;
+}
+
+static uint8_t canel_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t *resp,
+			    uint16_t *resp_len, void *ext_params)
+{
+	if (!mctp_inst || !buf || !resp || !resp_len) {
+		return PLDM_ERROR;
+	}
+
+	if (fw_update_tid != NULL && strcmp(k_thread_state_str(fw_update_tid), "dead") != 0) {
+		k_thread_abort(fw_update_tid);
+	}
+
+	LOG_WRN("Cancel update, current state: %d", cur_state);
+	cancel_update_resp *resp_p = (cancel_update_resp *)resp;
+
+	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	resp_p->non_function_comp = 0;
+	resp_p->non_function_comp_bitmap = 0;
+
+	*resp_len = sizeof(cancel_update_resp);
+
+	pre_state = cur_state;
+	cur_state = STATE_IDLE;
+
 	return PLDM_SUCCESS;
 }
 
@@ -485,6 +526,8 @@ static pldm_cmd_handler pldm_fw_update_cmd_tbl[] = {
 	{ PLDM_FW_UPDATE_CMD_CODE_UPDATE_COMPONENT, update_component },
 	{ PLDM_FW_UPDATE_CMD_CODE_ACTIVE_FIRMWARE, activate_firmware },
 	{ PLDM_FW_UPDATE_CMD_CODE_GET_STATUS, get_status },
+	{ PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE_COMPONENT, cancel_update_component },
+	{ PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE, canel_update },
 };
 
 uint8_t pldm_fw_update_handler_query(uint8_t code, void **ret_fn)

@@ -90,13 +90,13 @@ typedef struct _req_fw_update_date {
 } req_fw_update_date;
 
 enum cur_status {
-	STAT_IDLE,
-	STAT_LEARN_COMP,
-	STAT_RDY_XFER,
-	STAT_DOWNLOAD,
-	STAT_VERIFY,
-	STAT_APPLY,
-	STAT_ACTIVATE,
+	STATE_IDLE,
+	STATE_LEARN_COMP,
+	STATE_RDY_XFER,
+	STATE_DOWNLOAD,
+	STATE_VERIFY,
+	STATE_APPLY,
+	STATE_ACTIVATE,
 };
 
 enum comp_class {
@@ -220,6 +220,17 @@ typedef struct _update_comp_resp {
 	uint32_t update_option_flag_enabled;
 	uint16_t estimate_time_before_update;
 } update_comp_resp;
+
+typedef struct _activate_firmware_resp {
+	uint8_t completion_code;
+	uint16_t estimate_time;
+} activate_firmware_resp;
+
+typedef struct _cancel_update_resp {
+	uint8_t completion_code;
+	uint8_t non_function_comp;
+	uint64_t non_function_comp_bitmap;
+} cancel_update_resp;
 
 struct _get_status_resp {
 	uint8_t completion_code;
