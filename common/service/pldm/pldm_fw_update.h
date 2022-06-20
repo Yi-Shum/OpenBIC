@@ -59,11 +59,22 @@ typedef struct _comp_parameters {
 typedef struct _version_str {
 	uint8_t act_version[MAX_VER_STR_LEN];
 	uint8_t pend_version[MAX_VER_STR_LEN];
-	;
 } __attribute__((packed)) version_str_t;
 
-#define BIC_FW_DESC_CNT 1
-#define BIC_FW_DESC0_TYPE DESC_TYPE_IANA_ID
+typedef struct _req_fw_update_date {
+	uint32_t offset;
+	uint32_t length;
+} req_fw_update_date;
+
+typedef enum _fw_update_status {
+	STATE_IDLE,
+	STATE_LEARN_COMP,
+	STATE_RDY_XFER,
+	STATE_DOWNLOAD,
+	STATE_VERIFY,
+	STATE_APPLY,
+	STATE_ACTIVATE,
+} fw_update_status_t;
 
 typedef enum {
 	/* inventory commands */
@@ -84,20 +95,11 @@ typedef enum {
 	PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE = 0x1D,
 } PLDM_FW_UPDATE_CMD;
 
-typedef struct _req_fw_update_date {
-	uint32_t offset;
-	uint32_t length;
-} req_fw_update_date;
-
-enum cur_status {
-	STATE_IDLE,
-	STATE_LEARN_COMP,
-	STATE_RDY_XFER,
-	STATE_DOWNLOAD,
-	STATE_VERIFY,
-	STATE_APPLY,
-	STATE_ACTIVATE,
-};
+typedef struct _stat_machine {
+	PLDM_FW_UPDATE_CMD cmd;
+	fw_update_status_t cur_stat;
+	fw_update_status_t nxt_stat;
+} stat_machine_t;
 
 enum comp_class {
 	COMP_CLASS_UNKNOWN = 0x0000,
