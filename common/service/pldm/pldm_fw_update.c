@@ -124,6 +124,8 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 			req.length = comp_image_size - req.offset;
 			update_flag = (SECTOR_END_FLAG | NOT_RESET_FLAG);
 		}
+
+		LOG_WRN("[FD->UA] Request firmware data!");
 		read_len =
 			pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_REQUEST_FIRMWARE_DATA,
 					    (uint8_t *)&req, sizeof(req_fw_update_date), resp_buf,
@@ -147,6 +149,7 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 
 	uint8_t req_buf[3] = { 0 };
 
+	LOG_WRN("[FD->UA] Transfer complete!");
 	req_buf[0] = 0x00;
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE, req_buf,
 				       1, resp_buf, FW_UPDATE_BUF_SIZE);
@@ -157,23 +160,25 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 	pre_state = cur_state;
 	cur_state = STATE_VERIFY;
 
+	LOG_WRN("[FD->UA] Verify complete!");
 	req_buf[0] = 0x00;
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_VERIFY_COMPLETE, req_buf, 1,
 				       resp_buf, FW_UPDATE_BUF_SIZE);
 	if (read_len != 1 || resp_buf[0] != PLDM_BASE_CODES_SUCCESS) {
-		LOG_WRN("%s: Transfer complete fail", __func__);
+		LOG_WRN("%s: Verify complete fail", __func__);
 		goto error;
 	}
 	pre_state = cur_state;
 	cur_state = STATE_APPLY;
 
+	LOG_WRN("[FD->UA] Apply complete!");
 	req_buf[0] = 0x00;
 	req_buf[1] = 0x00;
 	req_buf[2] = 0x00;
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_APPLY_COMPLETE, req_buf, 3,
 				       resp_buf, FW_UPDATE_BUF_SIZE);
 	if (read_len != 1 || resp_buf[0] != PLDM_BASE_CODES_SUCCESS) {
-		LOG_WRN("%s: Transfer complete fail", __func__);
+		LOG_WRN("%s: Apply complete fail", __func__);
 		goto error;
 	}
 	pre_state = cur_state;
@@ -198,7 +203,10 @@ static uint8_t query_device_identifiers(void *mctp_inst, uint8_t *buf, uint16_t 
 
 	struct _query_dev_id_resp *resp_p = (struct _query_dev_id_resp *)resp;
 
+	LOG_WRN("[UA->FD] Query device identifiers!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
+
 	resp_p->desc_cnt = ARRAY_SIZE(bic_descriptor_config);
 	resp_p->dev_id_len = 0;
 	uint8_t *des_p = &resp_p->descriptors;
@@ -228,6 +236,7 @@ static uint8_t get_firmware_parameters(void *mctp_inst, uint8_t *buf, uint16_t l
 
 	struct _get_fw_parm_resp *resp_p = (struct _get_fw_parm_resp *)resp;
 
+	LOG_WRN("[UA->FD] Get firmware parameters!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -301,7 +310,9 @@ static uint8_t request_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8
 	struct _req_update_req *req_p = (struct _req_update_req *)buf;
 	struct _req_update_resp *resp_p = (struct _req_update_resp *)resp;
 
+	LOG_WRN("[UA->FD] Request update!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
 
 	/* TBD: currently not support meta data */
 	resp_p->fw_dev_meta_data_len = 0x0000;
@@ -328,7 +339,9 @@ static uint8_t pass_component_table(void *mctp_inst, uint8_t *buf, uint16_t len,
 	struct _pass_comp_table_req *req_p = (struct _pass_comp_table_req *)buf;
 	struct _pass_comp_table_resp *resp_p = (struct _pass_comp_table_resp *)resp;
 
+	LOG_WRN("[UA->FD] Pass component table!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
 
 	/* TBD: Transfer flag may need to be varified here */
 
@@ -389,6 +402,11 @@ static uint8_t update_component(void *mctp_inst, uint8_t *buf, uint16_t len, uin
 
 	update_comp_req *req_p = (update_comp_req *)buf;
 	update_comp_resp *resp_p = (update_comp_resp *)resp;
+
+	LOG_WRN("[UA->FD] Update component!");
+	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
+
 	if (len < sizeof(update_comp_req)) {
 		resp_p->completion_code = PLDM_BASE_CODES_ERROR_INVALID_LENGTH;
 		return PLDM_SUCCESS;
@@ -424,7 +442,11 @@ static uint8_t activate_firmware(void *mctp_inst, uint8_t *buf, uint16_t len, ui
 	}
 
 	activate_firmware_resp *resp_p = (activate_firmware_resp *)resp;
+
+	LOG_WRN("[UA->FD] Activate firmware!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
+
 	resp_p->estimate_time = 0;
 	*resp_len = sizeof(activate_firmware_resp);
 
@@ -441,6 +463,9 @@ static uint8_t get_status(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t *
 	}
 
 	struct _get_status_resp *resp_p = (struct _get_status_resp *)resp;
+
+	LOG_WRN("[UA->FD] Get status cur:%d pre:%d !", cur_state, pre_state);
+	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
 	resp_p->pre_state = pre_state;
@@ -466,7 +491,7 @@ static uint8_t cancel_update_component(void *mctp_inst, uint8_t *buf, uint16_t l
 		return PLDM_ERROR;
 	}
 
-	LOG_WRN("%s: Cancel update component!", __func__);
+	LOG_WRN("[UA->FD] Cancel update component!");
 	*resp = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -487,10 +512,12 @@ static uint8_t canel_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t
 		k_thread_abort(fw_update_tid);
 	}
 
-	LOG_WRN("Cancel update, current state: %d", cur_state);
+	LOG_WRN("[UA->FD] Cancel update, current state: %d", cur_state);
 	cancel_update_resp *resp_p = (cancel_update_resp *)resp;
 
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
+	*resp_len = 1;
+
 	resp_p->non_function_comp = 0;
 	resp_p->non_function_comp_bitmap = 0;
 
