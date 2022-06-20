@@ -25,6 +25,8 @@ K_KERNEL_STACK_MEMBER(pldm_fw_update_stack, PLDM_FW_UPDATE_STACK_SIZE);
 static uint8_t cur_state = STATE_IDLE;
 static uint8_t pre_state = STATE_IDLE;
 static uint32_t comp_image_size;
+static uint32_t max_trans_size;
+static uint8_t max_ostd_trans_req;
 
 desc_cfg_t bic_descriptor_config[] = {
 	/* init desc: Should atlast have 1 */
@@ -57,7 +59,7 @@ version_str_t version_str_set_config = {
 version_str_t version_str_config[] = {
 	{ { 0x31, 0x00, 0x30, 0x00, 0x30 }, { 0 } }, // act: 1.0.0 pend: none
 };
-
+/*
 static void swaping(void *data, uint32_t num_byte)
 {
 	uint8_t *buff = data;
@@ -67,7 +69,7 @@ static void swaping(void *data, uint32_t num_byte)
 		*(buff + (num_byte - i - 1)) = tmp;
 	}
 }
-
+*/
 static void udpate_fail_handler(void *mctp_p)
 {
 	uint8_t req_data[3];
@@ -208,14 +210,17 @@ static uint8_t query_device_identifiers(void *mctp_inst, uint8_t *buf, uint16_t 
 	*resp_len = 1;
 
 	resp_p->desc_cnt = ARRAY_SIZE(bic_descriptor_config);
+
 	resp_p->dev_id_len = 0;
 	uint8_t *des_p = &resp_p->descriptors;
 
 	for (int i = 0; i < resp_p->desc_cnt; i++) {
 		*((uint16_t *)des_p) = bic_descriptor_config[i].desc_type;
-		des_p += 2;
+		des_p += sizeof(bic_descriptor_config[i].desc_type);
+
 		*((uint16_t *)des_p) = bic_descriptor_config[i].desc_len;
-		des_p += 2;
+		des_p += sizeof(bic_descriptor_config[i].desc_len);
+
 		memcpy(des_p, bic_descriptor_config[i].desc_data,
 		       bic_descriptor_config[i].desc_len);
 		des_p += bic_descriptor_config[i].desc_len;
@@ -240,12 +245,8 @@ static uint8_t get_firmware_parameters(void *mctp_inst, uint8_t *buf, uint16_t l
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
-	uint32_t cap_during_update = 0x7; //TBD: currently same as NIC config
-	swaping(&cap_during_update, 2);
-	resp_p->cap_during_update = cap_during_update;
-	uint16_t comp_cnt = ARRAY_SIZE(bic_parameters_config);
-	swaping(&comp_cnt, 2);
-	resp_p->comp_cnt = comp_cnt; // means 1 component count
+	resp_p->cap_during_update = 0x7; //TBD: currently same as NIC config
+	resp_p->comp_cnt = ARRAY_SIZE(bic_parameters_config);
 	resp_p->active_comp_img_set_ver_str_type = STR_TYPE_ASCII;
 	resp_p->active_comp_img_set_ver_str_len = MAX_VER_STR_LEN; // TBD: temparary set 16 bytes
 	resp_p->pend_comp_img_set_ver_str_type =
@@ -276,7 +277,7 @@ static uint8_t get_firmware_parameters(void *mctp_inst, uint8_t *buf, uint16_t l
 	}
 
 	/* ComponentParameterTable */
-	for (int i = 0; i < comp_cnt; i++) {
+	for (int i = 0; i < resp_p->comp_cnt; i++) {
 		memcpy(cur_resp, &bic_parameters_config[i], sizeof(bic_parameters_config[i]));
 		cur_resp += sizeof(bic_parameters_config[i]);
 
@@ -317,6 +318,9 @@ static uint8_t request_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8
 	/* TBD: currently not support meta data */
 	resp_p->fw_dev_meta_data_len = 0x0000;
 
+	max_trans_size = req_p->max_trans_size;
+	max_ostd_trans_req = req_p->max_ostd_trans_req;
+
 	if (req_p->pkg_data_len) {
 		resp_p->fd_will_send_get_pkg_data_cmd = 0x01;
 	} else {
@@ -348,7 +352,7 @@ static uint8_t pass_component_table(void *mctp_inst, uint8_t *buf, uint16_t len,
 	/* TBD: Component classification may need to be varified here */
 
 	if (req_p->comp_class == 0xFFFF) {
-		if (req_p->comp_id > 0xFFF) {
+		if (req_p->comp_identifier > 0xFFF) {
 			LOG_WRN("%s: Invalid component id for downstream device.", __func__);
 			resp_p->completion_code = PLDM_BASE_CODES_ERROR_INVALID_DATA;
 			goto end;

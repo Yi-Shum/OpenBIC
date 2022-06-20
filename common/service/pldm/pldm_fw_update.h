@@ -187,7 +187,7 @@ struct _req_update_resp {
 struct _pass_comp_table_req {
 	uint8_t trans_flag;
 	uint16_t comp_class;
-	uint16_t comp_id;
+	uint16_t comp_identifier;
 	uint8_t comp_class_idx;
 	uint32_t comp_comparison_stamp;
 	uint8_t comp_ver_str_type;
