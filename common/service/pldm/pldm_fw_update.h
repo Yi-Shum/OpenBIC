@@ -9,6 +9,38 @@
 
 #define MAX_VER_STR_LEN 0x10
 
+/**************************************************************************************************
+ * ENUM
+**************************************************************************************************/
+typedef enum _pldm_fw_update_cmd {
+	/* inventory commands */
+	PLDM_FW_UPDATE_CMD_CODE_QUERY_DEVICE_IDENTIFIERS = 0x01,
+	PLDM_FW_UPDATE_CMD_CODE_GET_FIRMWARE_PARAMETERS = 0x02,
+
+	/* update commands */
+	PLDM_FW_UPDATE_CMD_CODE_REQUEST_UPDATE = 0x10,
+	PLDM_FW_UPDATE_CMD_CODE_PASS_COMPONENT_TABLE = 0x13,
+	PLDM_FW_UPDATE_CMD_CODE_UPDATE_COMPONENT = 0x14,
+	PLDM_FW_UPDATE_CMD_CODE_REQUEST_FIRMWARE_DATA = 0x15,
+	PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE = 0x16,
+	PLDM_FW_UPDATE_CMD_CODE_VERIFY_COMPLETE = 0x17,
+	PLDM_FW_UPDATE_CMD_CODE_APPLY_COMPLETE = 0x18,
+	PLDM_FW_UPDATE_CMD_CODE_ACTIVE_FIRMWARE = 0x1A,
+	PLDM_FW_UPDATE_CMD_CODE_GET_STATUS = 0x1B,
+	PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE_COMPONENT = 0x1C,
+	PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE = 0x1D,
+} pldm_fw_update_cmd_t;
+
+typedef enum _fw_update_status {
+	STATE_IDLE,
+	STATE_LEARN_COMP,
+	STATE_RDY_XFER,
+	STATE_DOWNLOAD,
+	STATE_VERIFY,
+	STATE_APPLY,
+	STATE_ACTIVATE,
+} fw_update_status_t;
+
 enum desc_type {
 	/* init */
 	DESC_TYPE_PCI_VEND_ID = 0x0000,
@@ -32,74 +64,6 @@ enum desc_type {
 	DESC_TYPE_UBM_CTRL_DEV_CODE = 0x0109,
 	DESC_TYPE_VEND_DEF = 0xFFFF,
 };
-
-typedef struct _descriptors {
-	uint16_t desc_type;
-	uint16_t desc_len;
-	uint8_t *desc_data;
-} __attribute__((packed)) desc_cfg_t;
-
-typedef struct _comp_parameters {
-	uint16_t comp_class;
-	uint16_t comp_identifier;
-	uint8_t comp_class_idx;
-	uint32_t active_comp_comparison_stamp;
-	uint8_t active_comp_ver_str_type;
-	uint8_t active_comp_ver_str_len;
-	uint8_t active_comp_release_date[8];
-	uint32_t pend_comp_comparison_stamp;
-	uint8_t pend_comp_ver_str_type;
-	uint8_t pend_comp_ver_str_len;
-	uint8_t pend_comp_release_date[8];
-	uint16_t comp_activate_methods;
-	uint32_t cap_during_update;
-	uint8_t variables; // active + pend component version string
-} __attribute__((packed)) comp_parameters_t;
-
-typedef struct _version_str {
-	uint8_t act_version[MAX_VER_STR_LEN];
-	uint8_t pend_version[MAX_VER_STR_LEN];
-} __attribute__((packed)) version_str_t;
-
-typedef struct _req_fw_update_date {
-	uint32_t offset;
-	uint32_t length;
-} req_fw_update_date;
-
-typedef enum _fw_update_status {
-	STATE_IDLE,
-	STATE_LEARN_COMP,
-	STATE_RDY_XFER,
-	STATE_DOWNLOAD,
-	STATE_VERIFY,
-	STATE_APPLY,
-	STATE_ACTIVATE,
-} fw_update_status_t;
-
-typedef enum {
-	/* inventory commands */
-	PLDM_FW_UPDATE_CMD_CODE_QUERY_DEVICE_IDENTIFIERS = 0x01,
-	PLDM_FW_UPDATE_CMD_CODE_GET_FIRMWARE_PARAMETERS = 0x02,
-
-	/* update commands */
-	PLDM_FW_UPDATE_CMD_CODE_REQUEST_UPDATE = 0x10,
-	PLDM_FW_UPDATE_CMD_CODE_PASS_COMPONENT_TABLE = 0x13,
-	PLDM_FW_UPDATE_CMD_CODE_UPDATE_COMPONENT = 0x14,
-	PLDM_FW_UPDATE_CMD_CODE_REQUEST_FIRMWARE_DATA = 0x15,
-	PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE = 0x16,
-	PLDM_FW_UPDATE_CMD_CODE_VERIFY_COMPLETE = 0x17,
-	PLDM_FW_UPDATE_CMD_CODE_APPLY_COMPLETE = 0x18,
-	PLDM_FW_UPDATE_CMD_CODE_ACTIVE_FIRMWARE = 0x1A,
-	PLDM_FW_UPDATE_CMD_CODE_GET_STATUS = 0x1B,
-	PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE_COMPONENT = 0x1C,
-	PLDM_FW_UPDATE_CMD_CODE_CANCEL_UPDATE = 0x1D,
-} PLDM_FW_UPDATE_CMD;
-
-typedef struct _stat_machine {
-	PLDM_FW_UPDATE_CMD cmd;
-	fw_update_status_t cur_stat;
-	fw_update_status_t nxt_stat;
-} stat_machine_t;
 
 enum comp_class {
 	COMP_CLASS_UNKNOWN = 0x0000,
@@ -152,6 +116,51 @@ enum comp_resp_code {
 	cc_0B,
 };
 
+/**************************************************************************************************
+ * STRUCTURE
+**************************************************************************************************/
+typedef struct _descriptors {
+	uint16_t desc_type;
+	uint16_t desc_len;
+	uint8_t *desc_data;
+} __attribute__((packed)) desc_cfg_t;
+
+typedef struct _comp_parameters {
+	uint16_t comp_class;
+	uint16_t comp_identifier;
+	uint8_t comp_class_idx;
+	uint32_t active_comp_comparison_stamp;
+	uint8_t active_comp_ver_str_type;
+	uint8_t active_comp_ver_str_len;
+	uint8_t active_comp_release_date[8];
+	uint32_t pend_comp_comparison_stamp;
+	uint8_t pend_comp_ver_str_type;
+	uint8_t pend_comp_ver_str_len;
+	uint8_t pend_comp_release_date[8];
+	uint16_t comp_activate_methods;
+	uint32_t cap_during_update;
+	uint8_t variables; // active + pend component version string
+} __attribute__((packed)) comp_parameters_t;
+
+typedef struct _version_str {
+	uint8_t act_version[MAX_VER_STR_LEN];
+	uint8_t pend_version[MAX_VER_STR_LEN];
+} __attribute__((packed)) version_str_t;
+
+typedef struct _req_fw_update_date {
+	uint32_t offset;
+	uint32_t length;
+} req_fw_update_date;
+
+typedef struct _stat_machine {
+	pldm_fw_update_cmd_t cmd;
+	fw_update_status_t cur_stat;
+	fw_update_status_t nxt_stat;
+} stat_machine_t;
+
+/**************************************************************************************************
+ * COMMAND STRUCTURE
+**************************************************************************************************/
 struct _query_dev_id_resp {
 	uint8_t completion_code;
 	uint32_t dev_id_len;
@@ -245,8 +254,11 @@ struct _get_status_resp {
 	uint32_t update_op_flags_en;
 } __attribute__((packed));
 
+/**************************************************************************************************
+ * NON-STATIC FUNCTION
+**************************************************************************************************/
 uint8_t pldm_fw_update_handler_query(uint8_t code, void **ret_fn);
-uint16_t pldm_fw_update_read(void *mctp_p, PLDM_FW_UPDATE_CMD cmd, uint8_t *req, uint16_t req_len,
+uint16_t pldm_fw_update_read(void *mctp_p, pldm_fw_update_cmd_t cmd, uint8_t *req, uint16_t req_len,
 			     uint8_t *rbuf, uint16_t rbuf_len);
 
 #endif

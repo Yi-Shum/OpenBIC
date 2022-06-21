@@ -608,7 +608,7 @@ static uint8_t canel_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t
 	return PLDM_SUCCESS;
 }
 
-uint16_t pldm_fw_update_read(void *mctp_p, PLDM_FW_UPDATE_CMD cmd, uint8_t *req, uint16_t req_len,
+uint16_t pldm_fw_update_read(void *mctp_p, pldm_fw_update_cmd_t cmd, uint8_t *req, uint16_t req_len,
 			     uint8_t *rbuf, uint16_t rbuf_len)
 {
 	pldm_msg msg;
