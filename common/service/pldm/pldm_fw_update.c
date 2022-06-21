@@ -48,8 +48,8 @@ stat_machine_t fd_stat_machine[] = {
 	{ PLDM_FW_UPDATE_CMD_CODE_GET_FIRMWARE_PARAMETERS, STATE_ACTIVATE, STATE_ACTIVATE },
 
 	/* RequestUpdate */
-	{ PLDM_FW_UPDATE_CMD_CODE_REQUEST_UPDATE, STATE_IDLE, STATE_LEARN_COMP }, //success
-	{ PLDM_FW_UPDATE_CMD_CODE_REQUEST_UPDATE, STATE_IDLE, STATE_IDLE }, //failed
+	{ PLDM_FW_UPDATE_CMD_CODE_REQUEST_UPDATE, STATE_IDLE, STATE_LEARN_COMP },
+	{ PLDM_FW_UPDATE_CMD_CODE_REQUEST_UPDATE, STATE_IDLE, STATE_IDLE },
 	{ PLDM_FW_UPDATE_CMD_CODE_REQUEST_UPDATE, STATE_RDY_XFER, STATE_RDY_XFER },
 
 	/* PassComponentTable */
@@ -201,7 +201,8 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 			update_flag = (SECTOR_END_FLAG | NOT_RESET_FLAG);
 		}
 
-		LOG_WRN("[FD->UA] Request firmware data!");
+		LOG_INF("[FD->UA] Request firmware data (ofst: 0x%x len: %d)", req.offset,
+			req.length);
 		read_len =
 			pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_REQUEST_FIRMWARE_DATA,
 					    (uint8_t *)&req, sizeof(req_fw_update_date), resp_buf,
@@ -225,7 +226,7 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 
 	uint8_t req_buf[3] = { 0 };
 
-	LOG_WRN("[FD->UA] Transfer complete!");
+	LOG_INF("[FD->UA] Transfer complete!");
 	req_buf[0] = 0x00;
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_TRANSFER_COMPLETE, req_buf,
 				       1, resp_buf, FW_UPDATE_BUF_SIZE);
@@ -236,7 +237,7 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 	pre_state = cur_state;
 	cur_state = STATE_VERIFY;
 
-	LOG_WRN("[FD->UA] Verify complete!");
+	LOG_INF("[FD->UA] Verify complete!");
 	req_buf[0] = 0x00;
 	read_len = pldm_fw_update_read(mctp_p, PLDM_FW_UPDATE_CMD_CODE_VERIFY_COMPLETE, req_buf, 1,
 				       resp_buf, FW_UPDATE_BUF_SIZE);
@@ -247,7 +248,7 @@ void req_fw_update_handler(void *mctp_p, void *arg1, void *arg2)
 	pre_state = cur_state;
 	cur_state = STATE_APPLY;
 
-	LOG_WRN("[FD->UA] Apply complete!");
+	LOG_INF("[FD->UA] Apply complete!");
 	req_buf[0] = 0x00;
 	req_buf[1] = 0x00;
 	req_buf[2] = 0x00;
@@ -279,7 +280,7 @@ static uint8_t query_device_identifiers(void *mctp_inst, uint8_t *buf, uint16_t 
 
 	struct _query_dev_id_resp *resp_p = (struct _query_dev_id_resp *)resp;
 
-	LOG_WRN("[UA->FD] Query device identifiers!");
+	LOG_INF("[UA->FD] Query device identifiers!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -315,7 +316,7 @@ static uint8_t get_firmware_parameters(void *mctp_inst, uint8_t *buf, uint16_t l
 
 	struct _get_fw_parm_resp *resp_p = (struct _get_fw_parm_resp *)resp;
 
-	LOG_WRN("[UA->FD] Get firmware parameters!");
+	LOG_INF("[UA->FD] Get firmware parameters!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -385,7 +386,7 @@ static uint8_t request_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8
 	struct _req_update_req *req_p = (struct _req_update_req *)buf;
 	struct _req_update_resp *resp_p = (struct _req_update_resp *)resp;
 
-	LOG_WRN("[UA->FD] Request update!");
+	LOG_INF("[UA->FD] Request update!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -417,7 +418,7 @@ static uint8_t pass_component_table(void *mctp_inst, uint8_t *buf, uint16_t len,
 	struct _pass_comp_table_req *req_p = (struct _pass_comp_table_req *)buf;
 	struct _pass_comp_table_resp *resp_p = (struct _pass_comp_table_resp *)resp;
 
-	LOG_WRN("[UA->FD] Pass component table!");
+	LOG_INF("[UA->FD] Pass component table!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -481,7 +482,7 @@ static uint8_t update_component(void *mctp_inst, uint8_t *buf, uint16_t len, uin
 	update_comp_req *req_p = (update_comp_req *)buf;
 	update_comp_resp *resp_p = (update_comp_resp *)resp;
 
-	LOG_WRN("[UA->FD] Update component!");
+	LOG_INF("[UA->FD] Update component!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -521,7 +522,7 @@ static uint8_t activate_firmware(void *mctp_inst, uint8_t *buf, uint16_t len, ui
 
 	activate_firmware_resp *resp_p = (activate_firmware_resp *)resp;
 
-	LOG_WRN("[UA->FD] Activate firmware!");
+	LOG_INF("[UA->FD] Activate firmware!");
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -542,7 +543,7 @@ static uint8_t get_status(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t *
 
 	struct _get_status_resp *resp_p = (struct _get_status_resp *)resp;
 
-	LOG_WRN("[UA->FD] Get status cur:%d pre:%d !", cur_state, pre_state);
+	LOG_INF("[UA->FD] Get status cur:%d pre:%d !", cur_state, pre_state);
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -569,7 +570,7 @@ static uint8_t cancel_update_component(void *mctp_inst, uint8_t *buf, uint16_t l
 		return PLDM_ERROR;
 	}
 
-	LOG_WRN("[UA->FD] Cancel update component!");
+	LOG_INF("[UA->FD] Cancel update component!");
 	*resp = PLDM_BASE_CODES_SUCCESS;
 	*resp_len = 1;
 
@@ -590,7 +591,7 @@ static uint8_t canel_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t
 		k_thread_abort(fw_update_tid);
 	}
 
-	LOG_WRN("[UA->FD] Cancel update, current state: %d", cur_state);
+	LOG_INF("[UA->FD] Cancel update, current state: %d", cur_state);
 	cancel_update_resp *resp_p = (cancel_update_resp *)resp;
 
 	resp_p->completion_code = PLDM_BASE_CODES_SUCCESS;
@@ -642,11 +643,21 @@ uint8_t pldm_fw_update_handler_query(uint8_t code, void **ret_fn)
 	}
 
 	pldm_cmd_proc_fn fn = NULL;
-	uint8_t i;
+	uint8_t i, j;
 
 	for (i = 0; i < ARRAY_SIZE(pldm_fw_update_cmd_tbl); i++) {
 		if (pldm_fw_update_cmd_tbl[i].cmd_code == code) {
-			fn = pldm_fw_update_cmd_tbl[i].fn;
+			/* Filter out command if it shouldn't show up at current state */
+			for (j = 0; j < ARRAY_SIZE(fd_stat_machine); j++) {
+				if (fd_stat_machine[j].cmd == code &&
+				    fd_stat_machine[j].cur_stat == cur_state) {
+					fn = pldm_fw_update_cmd_tbl[i].fn;
+					break;
+				}
+			}
+			if (j == ARRAY_SIZE(fd_stat_machine))
+				LOG_ERR("%s: Command 0x%x should not process in current state %d\n",
+					__func__, code, cur_state);
 			break;
 		}
 	}
