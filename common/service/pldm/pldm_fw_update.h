@@ -186,7 +186,7 @@ struct _req_update_req {
 	uint16_t pkg_data_len;
 	uint8_t comp_img_set_ver_str_type;
 	uint8_t comp_img_set_ver_str_len;
-	char comp_img_set_ver_str[255];
+	uint8_t comp_img_set_ver_str;
 } __attribute__((packed));
 
 struct _req_update_resp {
@@ -203,7 +203,7 @@ struct _pass_comp_table_req {
 	uint32_t comp_comparison_stamp;
 	uint8_t comp_ver_str_type;
 	uint8_t comp_ver_str_len;
-	char comp_ver_str[255];
+	uint8_t comp_ver_str;
 } __attribute__((packed));
 
 struct _pass_comp_table_resp {

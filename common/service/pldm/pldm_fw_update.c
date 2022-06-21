@@ -402,6 +402,11 @@ static uint8_t request_update(void *mctp_inst, uint8_t *buf, uint16_t len, uint8
 		resp_p->fd_will_send_get_pkg_data_cmd = 0x00;
 	}
 
+	/* TODO: Currently just print out */
+	for (int i = 0; i < req_p->comp_img_set_ver_str_len; i++) {
+		LOG_INF("'%s'", req_p->comp_img_set_ver_str + i);
+	}
+
 	*resp_len = sizeof(struct _req_update_resp);
 	pre_state = cur_state;
 	cur_state = STATE_LEARN_COMP;
@@ -458,6 +463,11 @@ static uint8_t pass_component_table(void *mctp_inst, uint8_t *buf, uint16_t len,
 		resp_p->comp_resp = 0x00;
 	} else {
 		resp_p->comp_resp = 0x01;
+	}
+
+	/* TODO: Currently just print out */
+	for (int i = 0; i < req_p->comp_ver_str; i++) {
+		LOG_INF("'%s'", req_p->comp_ver_str + i);
 	}
 
 	*resp_len = sizeof(struct _pass_comp_table_resp);
