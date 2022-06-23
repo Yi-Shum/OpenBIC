@@ -1,4 +1,5 @@
 #include "hal_i2c.h"
+#include "hal_i3c_master.h"
 #include "hal_wdt.h"
 #include "timer.h"
 #include "sensor.h"
@@ -35,6 +36,7 @@ void main(void)
 	wdt_init();
 	util_init_timer();
 	util_init_I2C();
+	util_init_i3c();
 	pal_pre_init();
 	sensor_init();
 	FRU_init();
