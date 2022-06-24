@@ -3,7 +3,7 @@
 
 #define PLATFORM_NAME "yv35"
 #define PROJECT_NAME "halfdome"
-#define IANA_ID 0x00A015
+#define IANA_ID 0x009c9c
 #define DEVICE_ID 0x00
 #define DEVICE_REVISION 0x80
 #define FIRMWARE_REVISION_1 0x03

@@ -212,3 +212,8 @@
 &peci {
 	status = "disabled";
 };
+
+&snoop {
+  status = "okay";
+  port = <0x80>, <0x81>;
+};
