@@ -88,10 +88,12 @@ void snoop_read()
 		printf("snoop read buffer alloc fail\n");
 		return;
 	}
+	printf("#2!!!!\n");
 
 	while (1) {
 		rc = snoop_aspeed_read(snoop_dev, 0, snoop_data, true);
 		if (rc == 0) {
+			printf("get postcode 0x%x \n", *snoop_data);
 			proc_postcode_ok = true;
 			if (!k_mutex_lock(&snoop_mutex, K_MSEC(1000))) {
 				snoop_read_buffer[snoop_read_num % SNOOP_MAX_LEN] = *snoop_data;
@@ -110,6 +112,7 @@ void init_snoop_thread()
 {
 	snoop_init();
 	snoop_read_num = 0;
+	printf("#1!!!!\n");
 	if (snoop_tid != NULL && strcmp(k_thread_state_str(snoop_tid), "dead") != 0) {
 		return;
 	}
