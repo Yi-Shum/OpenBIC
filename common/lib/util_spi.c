@@ -281,7 +281,7 @@ __weak int pal_get_bios_flash_position()
 	return -1;
 }
 
-__weak bool pal_switch_bios_spi_mux(int gpio_status)
+__weak bool pal_switch_bios_spi_mux(uint8_t gpio_status)
 {
 	return false;
 }
