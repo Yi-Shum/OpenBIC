@@ -84,6 +84,8 @@
 #define SENSOR_NUM_PWR_DIMM_I 0x39
 #define SENSOR_NUM_PWR_DIMM_K 0x3A
 
+#define SENSOR_NUM_POWER_ERROR 0x56
+
 uint8_t load_sensor_config(void);
 
 #endif
