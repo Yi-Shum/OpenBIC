@@ -71,6 +71,7 @@ const char *const sensor_type_name[] = {
 						sensor_name_to_num(ina230) sensor_name_to_num(
 							raa229621) sensor_name_to_num(nct7718w)
 							sensor_name_to_num(amd_cpu_temp)
+								sensor_name_to_num(amd_cpu_pwr)
 };
 
 const char *const sensor_status_name[] = {

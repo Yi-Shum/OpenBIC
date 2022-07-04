@@ -453,5 +453,5 @@ void apml_init()
 
 	k_thread_create(&apml_thread, APML_HANDLER_stack, K_THREAD_STACK_SIZEOF(APML_HANDLER_stack),
 			apml_handler, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(&apml_thread, "kcs_polling");
+	k_thread_name_set(&apml_thread, "APML_handler");
 }
