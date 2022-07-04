@@ -79,6 +79,7 @@ enum SENSOR_DEV {
 	sensor_dev_ina230 = 0x13,
 	sensor_dev_raa229621 = 0x14,
 	sensor_dev_nct7718w = 0x15,
+	sensor_dev_amd_cpu_temp = 0x16,
 	sensor_dev_max
 };
 

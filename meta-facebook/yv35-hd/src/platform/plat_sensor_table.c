@@ -33,9 +33,8 @@ sensor_cfg plat_sensor_config[] = {
 
 	/* todo: Add AMD CPU&DIMM temperature and power read */
 	// /* CPU */
-	// { SENSOR_NUM_TEMP_CPU, sensor_dev_amd_cpu_temp, I2C_BUS10, TSI_ADDR, CPU_TEMP_OFFSET,
-	//   post_access, 0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
-	//   NULL },
+	{ SENSOR_NUM_TEMP_CPU, sensor_dev_amd_cpu_temp, I2C_BUS14, TSI_ADDR, NONE, post_access, 0,
+	  0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, NULL },
 	// { SENSOR_NUM_TEMP_DIMM_A, sensor_dev_amd_dimm_temp, I2C_BUS10, APML_ADDR, NULL, post_access,
 	//   0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, NULL },
 	// { SENSOR_NUM_TEMP_DIMM_B, sensor_dev_amd_dimm_temp, I2C_BUS10, APML_ADDR, NULL, post_access,

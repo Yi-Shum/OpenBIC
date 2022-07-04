@@ -21,7 +21,6 @@
 /* define sensors offset */
 #define TMP75_TEMP_OFFSET 0x00
 #define SSD_TEMP_OFFSET 0x00
-#define CPU_TEMP_OFFSET 0x01
 #define CPU_PWR_OFFSET 0x01
 
 /*  threshold sensor number, 1 based  */
