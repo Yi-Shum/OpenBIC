@@ -70,8 +70,8 @@ const char *const sensor_type_name[] = {
 					sensor_name_to_num(isl69254) sensor_name_to_num(max16550a)
 						sensor_name_to_num(ina230) sensor_name_to_num(
 							raa229621) sensor_name_to_num(nct7718w)
-							sensor_name_to_num(amd_cpu_temp)
-								sensor_name_to_num(amd_cpu_pwr)
+							sensor_name_to_num(amd_tsi)
+								sensor_name_to_num(amd_apml_rmi)
 };
 
 const char *const sensor_status_name[] = {

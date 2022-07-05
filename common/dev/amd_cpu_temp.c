@@ -5,7 +5,7 @@
 
 #define READ_ORDER_BIT 5
 
-uint8_t amd_cpu_temp_read(uint8_t sensor_num, int *reading)
+uint8_t amd_tsi_read(uint8_t sensor_num, int *reading)
 {
 	if (reading == NULL || (sensor_num > SENSOR_NUM_MAX)) {
 		return SENSOR_UNSPECIFIED_ERROR;
@@ -46,12 +46,12 @@ uint8_t amd_cpu_temp_read(uint8_t sensor_num, int *reading)
 	return SENSOR_READ_SUCCESS;
 }
 
-uint8_t amd_cpu_temp_init(uint8_t sensor_num)
+uint8_t amd_tsi_init(uint8_t sensor_num)
 {
 	if (sensor_num > SENSOR_NUM_MAX) {
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 
-	sensor_config[sensor_config_index_map[sensor_num]].read = amd_cpu_temp_read;
+	sensor_config[sensor_config_index_map[sensor_num]].read = amd_tsi_read;
 	return SENSOR_INIT_SUCCESS;
 }

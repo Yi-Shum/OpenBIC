@@ -11,6 +11,7 @@ typedef struct _raa229621_pre_proc_arg {
 **************************************************************************************************/
 extern adc_asd_init_arg ast_adc_init_args[];
 extern adm1278_init_arg adm1278_init_args[];
+extern amd_apml_rmi_init_arg amd_apml_rmi_init_args[];
 
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK ARGS

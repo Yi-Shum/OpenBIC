@@ -79,8 +79,8 @@ enum SENSOR_DEV {
 	sensor_dev_ina230 = 0x13,
 	sensor_dev_raa229621 = 0x14,
 	sensor_dev_nct7718w = 0x15,
-	sensor_dev_amd_cpu_temp = 0x16,
-	sensor_dev_amd_cpu_pwr = 0x17,
+	sensor_dev_amd_tsi = 0x16,
+	sensor_dev_amd_apml_rmi = 0x17,
 	sensor_dev_max
 };
 
@@ -306,6 +306,10 @@ typedef struct _ina230_init_arg {
 	bool is_init;
 
 } ina230_init_arg;
+
+typedef struct _amd_apml_rmi_init_arg_ {
+	uint32_t data;
+} amd_apml_rmi_init_arg;
 
 extern bool enable_sensor_poll_thread;
 extern uint8_t SDR_COUNT;
