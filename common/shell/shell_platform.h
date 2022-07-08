@@ -68,9 +68,11 @@ const char *const sensor_type_name[] = {
 				ltc4282) sensor_name_to_num(fan) sensor_name_to_num(tmp431)
 				sensor_name_to_num(pmic) sensor_name_to_num(ina233)
 					sensor_name_to_num(isl69254) sensor_name_to_num(max16550a)
-						sensor_name_to_num(ina230)
-							sensor_name_to_num(raa229621)
-								sensor_name_to_num(nct7718w)
+						sensor_name_to_num(ina230) sensor_name_to_num(
+							raa229621) sensor_name_to_num(nct7718w)
+							sensor_name_to_num(amd_tsi)
+								sensor_name_to_num(amd_apml_rmi)
+
 };
 
 const char *const sensor_status_name[] = {

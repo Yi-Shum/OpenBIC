@@ -64,6 +64,8 @@ SENSOR_DRIVE_INIT_DECLARE(ina230);
 SENSOR_DRIVE_INIT_DECLARE(xdpe12284c);
 SENSOR_DRIVE_INIT_DECLARE(raa229621);
 SENSOR_DRIVE_INIT_DECLARE(nct7718w);
+SENSOR_DRIVE_INIT_DECLARE(amd_tsi);
+SENSOR_DRIVE_INIT_DECLARE(amd_apml_rmi);
 
 struct sensor_drive_api {
 	enum SENSOR_DEV dev;
@@ -91,6 +93,8 @@ struct sensor_drive_api {
 	SENSOR_DRIVE_TYPE_INIT_MAP(xdpe12284c),
 	SENSOR_DRIVE_TYPE_INIT_MAP(raa229621),
 	SENSOR_DRIVE_TYPE_INIT_MAP(nct7718w),
+	SENSOR_DRIVE_TYPE_INIT_MAP(amd_tsi),
+	SENSOR_DRIVE_TYPE_INIT_MAP(amd_apml_rmi),
 };
 
 static void init_sensor_num(void)
