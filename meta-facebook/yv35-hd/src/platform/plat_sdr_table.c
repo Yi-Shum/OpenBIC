@@ -2725,9 +2725,9 @@ SDR_Full_sensor plat_sdr_table[] = {
 		IPMI_SENSOR_UNIT_WATT, // base unit
 		0x00, // modifier unit
 		IPMI_SDR_LINEAR_LINEAR, // linearization
-		0x02, // [7:0] M bits
-		0x00, // [9:8] M bits, tolerance
-		0x01, // [7:0] B bits
+		0x07, // [7:0] M bits
+		0x40, // [9:8] M bits, tolerance
+		0x00, // [7:0] B bits
 		0x00, // [9:8] B bits, tolerance
 		0x00, // [7:4] accuracy , [3:2] accuracy exp, [1:0] sensor direction
 		0x00, // Rexp, Bexp
@@ -2738,7 +2738,7 @@ SDR_Full_sensor plat_sdr_table[] = {
 		0x00, // sensor maximum reading
 		0x00, // sensor minimum reading
 		0x00, // UNRT
-		0x83, // UCT
+		0x01, // UCT
 		0x00, // UNCT
 		0x00, // LNRT
 		0x00, // LCT
@@ -2847,9 +2847,9 @@ SDR_Full_sensor plat_sdr_table[] = {
 		IPMI_SENSOR_UNIT_WATT, // base unit
 		0x00, // modifier unit
 		IPMI_SDR_LINEAR_LINEAR, // linearization
-		0x02, // [7:0] M bits
-		0x00, // [9:8] M bits, tolerance
-		0x01, // [7:0] B bits
+		0x07, // [7:0] M bits
+		0x40, // [9:8] M bits, tolerance
+		0x00, // [7:0] B bits
 		0x00, // [9:8] B bits, tolerance
 		0x00, // [7:4] accuracy , [3:2] accuracy exp, [1:0] sensor direction
 		0x00, // Rexp, Bexp
@@ -2860,7 +2860,7 @@ SDR_Full_sensor plat_sdr_table[] = {
 		0x00, // sensor maximum reading
 		0x00, // sensor minimum reading
 		0x00, // UNRT
-		0x83, // UCT
+		0x01, // UCT
 		0x00, // UNCT
 		0x00, // LNRT
 		0x00, // LCT
