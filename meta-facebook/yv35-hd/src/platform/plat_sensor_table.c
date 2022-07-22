@@ -199,11 +199,11 @@ sensor_cfg plat_sensor_config[] = {
 	  0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &adm1278_init_args[0] },
 	{ SENSOR_NUM_CUR_HSCOUT, sensor_dev_adm1278, I2C_BUS5, HSC_ADDR, PMBUS_READ_IOUT,
-	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
-	  &adm1278_init_args[0] },
+	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL,
+	  post_adm1278_cur_read, NULL, &adm1278_init_args[0] },
 	{ SENSOR_NUM_PWR_HSCIN, sensor_dev_adm1278, I2C_BUS5, HSC_ADDR, PMBUS_READ_PIN, stby_access,
-	  0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
-	  &adm1278_init_args[0] },
+	  0, 0, SAMPLE_COUNT_DEFAULT, 0, SENSOR_INIT_STATUS, NULL, NULL, post_adm1278_pwr_read,
+	  NULL, &adm1278_init_args[0] },
 
 };
 
