@@ -2,7 +2,7 @@
 #include "power_status.h"
 #include "util_sys.h"
 #include "plat_gpio.h"
-#include "snoop.h"
+#include "pcc.h"
 
 SCU_CFG scu_cfg[] = {
 	//register    value
@@ -15,6 +15,7 @@ SCU_CFG scu_cfg[] = {
 void pal_pre_init()
 {
 	scu_init(scu_cfg, sizeof(scu_cfg) / sizeof(SCU_CFG));
+	pcc_init();
 }
 
 void pal_set_sys_status()
@@ -23,6 +24,9 @@ void pal_set_sys_status()
 	set_DC_on_delayed_status();
 	set_post_status(FM_BIOS_POST_CMPLT_BIC_N);
 	set_CPU_power_status(PWRGD_CPU_LVC3);
+	if (get_DC_status()) {
+		init_pcc_thread();
+	}
 	set_sys_ready_pin(BIC_READY);
 }
 
