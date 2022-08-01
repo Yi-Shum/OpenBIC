@@ -75,6 +75,7 @@ const char *const sensor_type_name[] = {
 							xdpe12284c) sensor_name_to_num(raa229621)
 							sensor_name_to_num(nct7718w)
 								sensor_name_to_num(ltc4286)
+									sensor_name_to_num(gmt788)
 };
 
 const char *const sensor_status_name[] = {

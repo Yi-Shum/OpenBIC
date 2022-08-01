@@ -58,6 +58,12 @@ enum INA230_OFFSET {
 	INA230_ALT_OFFSET = 0x07,
 };
 
+enum GMT788_OFFSET {
+	GMT788_LOCAL_TEMPERATRUE = 0x00,
+	GMT788_REMOTE_TEMPERATRUE = 0x01,
+	GMT788_REMOTE_TEMPERATRUE_EXT = 0x10,
+};
+
 enum SENSOR_DEV {
 	sensor_dev_tmp75 = 0,
 	sensor_dev_ast_adc = 0x01,
@@ -83,6 +89,7 @@ enum SENSOR_DEV {
 	sensor_dev_raa229621 = 0x15,
 	sensor_dev_nct7718w = 0x16,
 	sensor_dev_ltc4286 = 0x17,
+	sensor_dev_gmt788 = 0x18,
 	sensor_dev_max
 };
 

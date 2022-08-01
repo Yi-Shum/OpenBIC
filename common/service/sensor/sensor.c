@@ -68,6 +68,7 @@ SENSOR_DRIVE_INIT_DECLARE(xdpe12284c);
 SENSOR_DRIVE_INIT_DECLARE(raa229621);
 SENSOR_DRIVE_INIT_DECLARE(nct7718w);
 SENSOR_DRIVE_INIT_DECLARE(ltc4286);
+SENSOR_DRIVE_INIT_DECLARE(gmt788);
 
 struct sensor_drive_api {
 	enum SENSOR_DEV dev;
@@ -96,6 +97,7 @@ struct sensor_drive_api {
 	SENSOR_DRIVE_TYPE_INIT_MAP(raa229621),
 	SENSOR_DRIVE_TYPE_INIT_MAP(nct7718w),
 	SENSOR_DRIVE_TYPE_INIT_MAP(ltc4286),
+	SENSOR_DRIVE_TYPE_INIT_MAP(gmt788),
 };
 
 static void init_sensor_num(void)
@@ -556,6 +558,6 @@ uint8_t plat_get_config_size()
 
 __weak void load_sensor_config(void)
 {
-	memcpy(sensor_config, plat_sensor_config, SENSOR_CONFIG_SIZE);
+	memcpy(sensor_config, plat_sensor_config, SENSOR_CONFIG_SIZE * sizeof(sensor_cfg));
 	sensor_config_count = SENSOR_CONFIG_SIZE;
 }
