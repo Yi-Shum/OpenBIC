@@ -10,7 +10,7 @@ SCU_CFG scu_cfg[] = {
 	{ 0x7e6e2610, 0xffffffff },
 	{ 0x7e6e2614, 0xffffffff },
 	{ 0x7e6e2618, 0x30000000 },
-	{ 0x7e6e261c, 0x00000F04 },
+	{ 0x7e6e261c, 0xC0000F04 },
 };
 
 void pal_pre_init()
