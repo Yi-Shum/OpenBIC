@@ -8,6 +8,8 @@
 #include "ipmi.h"
 #include "kcs.h"
 #include "plat_def.h"
+#include <stdlib.h>
+#include "libutil.h"
 
 struct k_thread kcs_polling;
 K_KERNEL_STACK_MEMBER(KCS_POLL_stack, KCS_POLL_STACK_SIZE);
@@ -97,6 +99,32 @@ void kcs_read(void *arvg0, void *arvg1, void *arvg2)
 			}
 
 		} else { // default command for BMC, should add BIC firmware update, BMC reset, real time sensor read in future
+			if (((req->netfn == NETFN_STORAGE_REQ) &&
+			     (req->cmd == CMD_STORAGE_ADD_SEL)) ||
+			    ((req->netfn == NETFN_SENSOR_REQ) && (req->cmd == 0x02))) {
+				uint8_t *kcs_buff;
+				kcs_buff = malloc(KCS_BUFF_SIZE * sizeof(uint8_t));
+				if (kcs_buff == NULL) { // allocate fail, retry allocate
+					k_msleep(10);
+					kcs_buff = malloc(KCS_BUFF_SIZE * sizeof(uint8_t));
+					if (kcs_buff == NULL) {
+						printf("kcs_read: Fail to malloc for kcs_buff\n");
+						continue;
+					}
+					memset(kcs_buff, 0, KCS_BUFF_SIZE);
+				}
+				kcs_buff[0] = (req->netfn | 0x01) << 2;
+				kcs_buff[1] = req->cmd;
+				kcs_buff[2] = CC_SUCCESS;
+
+				if (((req->netfn == NETFN_STORAGE_REQ) &&
+				     (req->cmd == CMD_STORAGE_ADD_SEL))) {
+					kcs_write(kcs_buff, 3);
+				} else {
+					kcs_write(kcs_buff, 5);
+				}
+				SAFE_FREE(kcs_buff);
+			}
 			bridge_msg.data_len = rc - 2; // exclude netfn, cmd
 			bridge_msg.seq_source = 0xff; // No seq for KCS
 			bridge_msg.InF_source = HOST_KCS;

@@ -601,6 +601,16 @@ void IPMB_RXTask(void *pvParameters, void *arvg0, void *arvg1)
 							&current_msg, K_NO_WAIT);
 					} else if (current_msg_rx->buffer.InF_source == HOST_KCS) {
 #ifdef CONFIG_IPMI_KCS_ASPEED
+						if (((current_msg_rx->buffer.netfn ==
+						      NETFN_STORAGE_RES) &&
+						     (current_msg_rx->buffer.cmd ==
+						      CMD_STORAGE_ADD_SEL)) ||
+						    ((current_msg_rx->buffer.netfn ==
+						      NETFN_SENSOR_RES) &&
+						     (current_msg_rx->buffer.cmd == 0x02))) {
+							goto cleanup;
+						}
+
 						uint8_t *kcs_buff;
 						int retry = 0;
 						do {
