@@ -361,7 +361,7 @@ void ISR_HSC_OC()
 {
 	addsel_msg_t sel_msg;
 	if (gpio_get(RST_RSMRST_BMC_N) == GPIO_HIGH) {
-		if (gpio_get(FM_HSC_TIMER) == GPIO_HIGH) {
+		if (gpio_get(FM_HSC_TIMER) == GPIO_LOW) {
 			sel_msg.event_type = IPMI_OEM_EVENT_TYPE_DEASSART;
 		} else {
 			sel_msg.event_type = IPMI_EVENT_TYPE_SENSOR_SPECIFIC;
