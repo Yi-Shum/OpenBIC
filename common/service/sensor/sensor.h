@@ -310,6 +310,7 @@ typedef struct _ina230_init_arg {
 
 typedef struct _amd_apml_rmi_init_arg_ {
 	uint32_t data;
+	uint8_t retry;
 } amd_apml_rmi_init_arg;
 
 extern bool enable_sensor_poll_thread;

@@ -4,6 +4,8 @@
 #include "sensor.h"
 #include "apml.h"
 
+#define SENSOR_READ_RETRY_MAX 3
+
 void cpu_power_write(apml_msg *msg)
 {
 	if ((msg == NULL) || (msg->ptr_arg == NULL)) {
@@ -11,10 +13,18 @@ void cpu_power_write(apml_msg *msg)
 	}
 	sensor_cfg *cfg = (sensor_cfg *)msg->ptr_arg;
 	mailbox_msg *mb_msg = &msg->data.mailbox;
+	amd_apml_rmi_init_arg *init_arg = (amd_apml_rmi_init_arg *)cfg->init_args;
+
 	if (mb_msg->error_code != SBRMI_MAILBOX_NO_ERR) {
-		printf("[%s] Read cpu power fail, error code %d\n", __func__, mb_msg->error_code);
-		cfg->cache_status = SENSOR_UNSPECIFIED_ERROR;
-		return;
+		if (init_arg->retry < SENSOR_READ_RETRY_MAX) {
+			init_arg->retry++;
+			return;
+		} else {
+			printf("[%s] Read cpu power failed, error code %d\n", __func__,
+			       mb_msg->error_code);
+			cfg->cache_status = SENSOR_UNSPECIFIED_ERROR;
+			return;
+		}
 	}
 
 	uint32_t raw_data = (mb_msg->data_out[3] << 24) | (mb_msg->data_out[2] << 16) |
@@ -24,6 +34,7 @@ void cpu_power_write(apml_msg *msg)
 	sval.fraction = raw_data % 1000;
 	memcpy(&cfg->cache, &sval, sizeof(sensor_val));
 	cfg->cache_status = SENSOR_READ_4BYTE_ACUR_SUCCESS;
+	init_arg->retry = 0;
 }
 
 void dimm_pwr_write(apml_msg *msg)
@@ -33,17 +44,27 @@ void dimm_pwr_write(apml_msg *msg)
 	}
 	sensor_cfg *cfg = (sensor_cfg *)msg->ptr_arg;
 	mailbox_msg *mb_msg = &msg->data.mailbox;
+	amd_apml_rmi_init_arg *init_arg = (amd_apml_rmi_init_arg *)cfg->init_args;
+
 	if (mb_msg->error_code != SBRMI_MAILBOX_NO_ERR) {
-		printf("[%s] Read cpu power fail, error code %d\n", __func__, mb_msg->error_code);
-		cfg->cache_status = SENSOR_UNSPECIFIED_ERROR;
-		return;
+		if (init_arg->retry < SENSOR_READ_RETRY_MAX) {
+			init_arg->retry++;
+			return;
+		} else {
+			printf("[%s] Read dimm power failed, error code %d\n", __func__,
+			       mb_msg->error_code);
+			cfg->cache_status = SENSOR_UNSPECIFIED_ERROR;
+			return;
+		}
 	}
+
 	uint16_t raw_data = (mb_msg->data_out[3] << 7) | (mb_msg->data_out[2] >> 1);
 	sensor_val sval;
 	sval.integer = raw_data / 1000;
 	sval.fraction = raw_data % 1000;
 	memcpy(&cfg->cache, &sval, sizeof(sensor_val));
 	cfg->cache_status = SENSOR_READ_4BYTE_ACUR_SUCCESS;
+	init_arg->retry = 0;
 }
 
 void dimm_temp_write(apml_msg *msg)
@@ -53,11 +74,20 @@ void dimm_temp_write(apml_msg *msg)
 	}
 	sensor_cfg *cfg = (sensor_cfg *)msg->ptr_arg;
 	mailbox_msg *mb_msg = &msg->data.mailbox;
+	amd_apml_rmi_init_arg *init_arg = (amd_apml_rmi_init_arg *)cfg->init_args;
+
 	if (mb_msg->error_code != SBRMI_MAILBOX_NO_ERR) {
-		printf("[%s] Read cpu power fail, error code %d\n", __func__, mb_msg->error_code);
-		cfg->cache_status = SENSOR_UNSPECIFIED_ERROR;
-		return;
+		if (init_arg->retry < SENSOR_READ_RETRY_MAX) {
+			init_arg->retry++;
+			return;
+		} else {
+			printf("[%s] Read dimm temperature failed, error code %d\n", __func__,
+			       mb_msg->error_code);
+			cfg->cache_status = SENSOR_UNSPECIFIED_ERROR;
+			return;
+		}
 	}
+
 	uint16_t raw_data = (mb_msg->data_out[3] << 3) | (mb_msg->data_out[2] >> 5);
 	float temp = 0.25 * raw_data;
 	sensor_val sval;
@@ -65,6 +95,7 @@ void dimm_temp_write(apml_msg *msg)
 	sval.fraction = (temp - sval.integer) * 1000;
 	memcpy(&cfg->cache, &sval, sizeof(sensor_val));
 	cfg->cache_status = SENSOR_READ_4BYTE_ACUR_SUCCESS;
+	init_arg->retry = 0;
 }
 
 uint8_t amd_apml_rmi_read(uint8_t sensor_num, int *reading)
