@@ -7,6 +7,7 @@
 #include "timer.h"
 #include "usb.h"
 #include <logging/log.h>
+#include "hal_i3c_master.h"
 
 __weak void pal_pre_init()
 {
@@ -36,6 +37,7 @@ void main(void)
 	wdt_init();
 	util_init_timer();
 	util_init_I2C();
+	util_init_i3c();
 	pal_pre_init();
 	sensor_init();
 	FRU_init();

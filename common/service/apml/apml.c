@@ -3,7 +3,7 @@
 #include "hal_i2c.h"
 #include "apml.h"
 
-#define RETRY_MAX 3
+#define RETRY_MAX 5
 #define APML_RESP_BUFFER_SIZE 10
 #define APML_HANDLER_STACK_SIZE 1024
 #define APML_MSGQ_LEN 32

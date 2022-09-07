@@ -107,10 +107,17 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
-&i2c13 {
-	pinctrl-0 = <&pinctrl_i2c13_default>;
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+&i3c_gr {
+       status = "okay";
+       pull-up-resistor-ohm = <2000>, <2000>, <2000>, <2000>;
+};
+
+&i3c3 {
+       status = "okay";
+       assigned-address = <0x20>;
+       pinctrl-0 = <&pinctrl_i3c3_default>;
+       i2c-scl-hz = < 1000000 >;
+       i3c-scl-hz = < 12500000 >;
 };
 
 &espi {
@@ -221,4 +228,8 @@
 	rec-mode = <0x1>;
 	dma-mode;
 	dma-ringbuf-size = <0x4000>;
+};
+
+&sram0 {
+	reg = <0 DT_SIZE_K(512)>, <0x80000 DT_SIZE_K(256)>;
 };
