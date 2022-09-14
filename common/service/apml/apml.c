@@ -2,6 +2,7 @@
 #include <string.h>
 #include "hal_i2c.h"
 #include "apml.h"
+#include "plat_gpio.h"
 
 #define RETRY_MAX 3
 #define WAIT_TIME_MS 10
@@ -321,6 +322,8 @@ static uint8_t read_mailbox_response(mailbox_msg *msg)
 static bool access_RMI_mailbox(mailbox_msg *msg)
 {
 	int i = 0;
+	static int debug_count = 0;
+
 	for (; i < RETRY_MAX; i++) {
 		if (check_mailbox_command_complete(msg)) {
 			break;
@@ -329,9 +332,15 @@ static bool access_RMI_mailbox(mailbox_msg *msg)
 	}
 	if (i == RETRY_MAX) {
 		printf("[%s] apml mailbox busy.\n", __func__);
+		debug_count++;
+		if (debug_count >= 3) {
+			gpio_set(FM_BMC_DEBUG_ENABLE_N, GPIO_LOW);
+			k_msleep(5);
+			gpio_set(FM_BMC_DEBUG_ENABLE_N, GPIO_HIGH);
+		}
 		return false;
 	}
-
+	debug_count = 0;
 	if (write_mailbox_request(msg)) {
 		printf("[%s] mailbox writet request fail.\n", __func__);
 		return false;
