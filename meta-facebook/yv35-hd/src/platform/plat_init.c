@@ -22,6 +22,7 @@
 #include "snoop.h"
 #include "apml.h"
 #include "pcc.h"
+#include "plat_pmic.h"
 
 SCU_CFG scu_cfg[] = {
 	//register    value
@@ -30,6 +31,11 @@ SCU_CFG scu_cfg[] = {
 	{ 0x7e6e2618, 0xdc000000 },
 	{ 0x7e6e261c, 0x00000F32 },
 };
+
+void pal_device_init()
+{
+	start_monitor_pmic_error_thread();
+}
 
 void pal_pre_init()
 {

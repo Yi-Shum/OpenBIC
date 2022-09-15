@@ -62,6 +62,8 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(xdpe19283b)
 	sensor_name_to_num(g788p81u)
 	sensor_name_to_num(mp2856gut)
+	sensor_name_to_num(ddr5_power)
+	sensor_name_to_num(ddr5_temp)
 };
 
 const char *const sensor_status_name[] = {
@@ -273,7 +275,7 @@ void cmd_control_sensor_polling(const struct shell *shell, size_t argc, char **a
 
 	sensor_config[sensor_index].is_enable_polling =
 		((operation == DISABLE_SENSOR_POLLING) ? DISABLE_SENSOR_POLLING :
-							       ENABLE_SENSOR_POLLING);
+							 ENABLE_SENSOR_POLLING);
 	shell_print(shell, "Sensor number 0x%x %s sensor polling success", sensor_num,
 		    ((operation == DISABLE_SENSOR_POLLING) ? "disable" : "enable"));
 	return;
