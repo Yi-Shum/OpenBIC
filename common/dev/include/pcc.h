@@ -21,6 +21,7 @@
 
 #define PCC_STACK_SIZE 512
 #define PCC_BUFFER_LEN 1024
+#define SEND_4BYTE_POSTCODE_STACK_SIZE 2048
 
 uint16_t copy_pcc_read_buffer(uint16_t start, uint16_t length, uint8_t *buffer,
 			      uint16_t buffer_len);

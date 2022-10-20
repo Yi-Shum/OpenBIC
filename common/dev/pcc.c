@@ -28,10 +28,14 @@
 
 LOG_MODULE_REGISTER(pcc);
 
+K_THREAD_STACK_DEFINE(send_4byte_postcode_thread, SEND_4BYTE_POSTCODE_STACK_SIZE);
+static struct k_thread send_4byte_postcode_thread_handler;
+
 const struct device *pcc_dev;
 static uint32_t pcc_read_buffer[PCC_BUFFER_LEN];
 static uint16_t pcc_read_len = 0, pcc_read_index = 0;
 static bool proc_4byte_postcode_ok = false;
+static struct k_sem get_postcode_sem;
 
 uint16_t copy_pcc_read_buffer(uint16_t start, uint16_t length, uint8_t *buffer, uint16_t buffer_len)
 {
@@ -63,7 +67,7 @@ uint16_t copy_pcc_read_buffer(uint16_t start, uint16_t length, uint8_t *buffer, 
 	return 4 * i;
 }
 
-void send_post_code_to_bmc()
+void send_4byte_post_code_to_BMC(void *arvg0, void *arvg1, void *arvg2)
 {
 	ipmi_msg *msg = (ipmi_msg *)malloc(sizeof(ipmi_msg));
 	if (msg == NULL) {
@@ -71,26 +75,39 @@ void send_post_code_to_bmc()
 		return;
 	}
 
-	memset(msg, 0, sizeof(ipmi_msg));
-	msg->InF_source = SELF;
-	msg->InF_target = BMC_IPMB;
-	msg->netfn = NETFN_OEM_1S_REQ;
-	msg->cmd = CMD_OEM_1S_SEND_4BYTE_POST_CODE_TO_BMC;
-	msg->data_len = 8;
-	msg->data[0] = IANA_ID & 0xFF;
-	msg->data[1] = (IANA_ID >> 8) & 0xFF;
-	msg->data[2] = (IANA_ID >> 16) & 0xFF;
-	msg->data[3] = 4;
-	copy_pcc_read_buffer(0, 1, &msg->data[4], 4);
+	uint16_t send_index = 0;
+	uint16_t current_read_index;
 
-	ipmb_error status = ipmb_read(msg, IPMB_inf_index_map[msg->InF_target]);
-	SAFE_FREE(msg);
-	if (status != IPMB_ERROR_SUCCESS) {
-		LOG_ERR("Failed to send 4-byte post code to BMC, status %d.", status);
+	while (1) {
+		k_sem_take(&get_postcode_sem, K_FOREVER);
+		current_read_index = pcc_read_index;
+		for (; send_index != current_read_index; send_index++) {
+			if (send_index == PCC_BUFFER_LEN - 1) {
+				send_index = 0;
+			}
+			memset(msg, 0, sizeof(ipmi_msg));
+			msg->InF_source = SELF;
+			msg->InF_target = BMC_IPMB;
+			msg->netfn = NETFN_OEM_1S_REQ;
+			msg->cmd = CMD_OEM_1S_SEND_4BYTE_POST_CODE_TO_BMC;
+			msg->data_len = 8;
+			msg->data[0] = IANA_ID & 0xFF;
+			msg->data[1] = (IANA_ID >> 8) & 0xFF;
+			msg->data[2] = (IANA_ID >> 16) & 0xFF;
+			msg->data[3] = 4;
+			msg->data[4] = pcc_read_buffer[send_index] & 0xFF;
+			msg->data[5] = (pcc_read_buffer[send_index] >> 8) & 0xFF;
+			msg->data[6] = (pcc_read_buffer[send_index] >> 16) & 0xFF;
+			msg->data[7] = (pcc_read_buffer[send_index] >> 24) & 0xFF;
+			ipmb_error status = ipmb_read(msg, IPMB_inf_index_map[msg->InF_target]);
+			if (status != IPMB_ERROR_SUCCESS) {
+				printf("Failed to send 4-byte post code to BMC, status %d.\n",
+				       status);
+			}
+			k_yield();
+		}
 	}
 }
-
-K_WORK_DEFINE(send_post_code_work, send_post_code_to_bmc);
 
 void pcc_rx_callback(const uint8_t *rb, uint32_t rb_sz, uint32_t st_idx, uint32_t ed_idx)
 {
@@ -123,9 +140,7 @@ void pcc_rx_callback(const uint8_t *rb, uint32_t rb_sz, uint32_t st_idx, uint32_
 		}
 		i = (i + 2) % rb_sz;
 	} while (i != ed_idx);
-
-	/* Send 4-byte post code to BMC */
-	k_work_submit(&send_post_code_work);
+	k_sem_give(&get_postcode_sem);
 }
 
 void pcc_init()
@@ -145,10 +160,23 @@ void pcc_init()
 	reg_data = sys_read32(0x7E789084);
 	sys_write32((reg_data | 0x00080000) & ~0x0001ffff, 0x7E789084);
 
+	k_sem_init(&get_postcode_sem, 0, 1);
+
 	if (pcc_aspeed_register_rx_callback(pcc_dev, pcc_rx_callback)) {
 		LOG_ERR("Cannot register PCC RX callback.");
 	}
+
+	k_thread_create(&send_4byte_postcode_thread_handler, send_4byte_postcode_thread,
+			K_THREAD_STACK_SIZEOF(send_4byte_postcode_thread),
+			send_4byte_post_code_to_BMC, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY,
+			0, K_NO_WAIT);
+	k_thread_name_set(&send_4byte_postcode_thread_handler, "send_4byte_postcode_thread");
+
 	return;
+}
+
+void init_send_4bypte_postcode_thread()
+{
 }
 
 void reset_pcc_buffer()
