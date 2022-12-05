@@ -454,6 +454,98 @@ sensor_cfg EVT_BOM3_sensor_config_table[] = {
 	  NULL, NULL },
 };
 
+sensor_cfg EVT_BOM4_sensor_config_table[] = {
+	/* Todo: HSC temperature sensor modified? */
+
+	/* VR voltage */
+	{ SENSOR_NUM_VOL_PVDDCR_CPU0_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_CPU0_ADDR,
+	  PMBUS_READ_VOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_VOL_PVDDCR_SOC_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_SOC_ADDR,
+	  PMBUS_READ_VOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[1], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_VOL_PVDDCR_CPU1_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_CPU1_ADDR,
+	  PMBUS_READ_VOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_VOL_PVDDIO_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDIO_ADDR,
+	  PMBUS_READ_VOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[1], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_VOL_PVDD11_S3_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDD11_S3_ADDR,
+	  PMBUS_READ_VOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+
+	/* VR current */
+	{ SENSOR_NUM_CUR_PVDDCR_CPU0_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_CPU0_ADDR,
+	  PMBUS_READ_IOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_CUR_PVDDCR_SOC_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_SOC_ADDR,
+	  PMBUS_READ_IOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[1], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_CUR_PVDDCR_CPU1_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_CPU1_ADDR,
+	  PMBUS_READ_IOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_CUR_PVDDIO_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDIO_ADDR,
+	  PMBUS_READ_IOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[1], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_CUR_PVDD11_S3_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDD11_S3_ADDR,
+	  PMBUS_READ_IOUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+
+	/* VR temperature */
+	{ SENSOR_NUM_TEMP_PVDDCR_CPU0_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_CPU0_ADDR,
+	  PMBUS_READ_TEMPERATURE_1, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_TEMP_PVDDCR_SOC_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_SOC_ADDR,
+	  PMBUS_READ_TEMPERATURE_1, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[1], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_TEMP_PVDDCR_CPU1_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_CPU1_ADDR,
+	  PMBUS_READ_TEMPERATURE_1, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_TEMP_PVDDIO_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDIO_ADDR,
+	  PMBUS_READ_TEMPERATURE_1, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[1], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_TEMP_PVDD11_S3_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDD11_S3_ADDR,
+	  PMBUS_READ_TEMPERATURE_1, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+
+	/* VR power */
+	{ SENSOR_NUM_PWR_PVDDCR_CPU0_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_CPU0_ADDR,
+	  PMBUS_READ_POUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_PWR_PVDDCR_SOC_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_SOC_ADDR,
+	  PMBUS_READ_POUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[1], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_PWR_PVDDCR_CPU1_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDCR_CPU1_ADDR,
+	  PMBUS_READ_POUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_PWR_PVDDIO_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDDIO_ADDR,
+	  PMBUS_READ_POUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[1], NULL,
+	  NULL, NULL },
+	{ SENSOR_NUM_PWR_PVDD11_S3_VR, sensor_dev_tps53689, I2C_BUS5, TPS53685_PVDD11_S3_ADDR,
+	  PMBUS_READ_POUT, vr_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_vr_read, &vr_pre_read_args[0], NULL,
+	  NULL, NULL },
+};
+
 void pal_extend_sensor_config()
 {
 	uint8_t sensor_count = 0;
@@ -491,6 +583,12 @@ void pal_extend_sensor_config()
 		sensor_count = ARRAY_SIZE(EVT_BOM3_sensor_config_table);
 		for (int index = 0; index < sensor_count; index++) {
 			add_sensor_config(EVT_BOM3_sensor_config_table[index]);
+		}
+		break;
+	case VR_VENDER_TI:
+		sensor_count = ARRAY_SIZE(EVT_BOM4_sensor_config_table);
+		for (int index = 0; index < sensor_count; index++) {
+			add_sensor_config(EVT_BOM4_sensor_config_table[index]);
 		}
 		break;
 	default:
