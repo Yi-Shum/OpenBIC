@@ -264,6 +264,18 @@ sensor_cfg ltc4282_sensor_config_table[] = {
 	  SENSOR_INIT_STATUS, NULL, NULL, post_ltc4282_pwr_read, NULL, &ltc4282_init_args[0] },
 };
 
+sensor_cfg mp5990_sensor_config_table[] = {
+	{ SENSOR_NUM_VOL_HSCIN, sensor_dev_mp5990, I2C_BUS5, LTC4282_ADDR, LTC4282_VSOURCE_OFFSET,
+	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
+	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, &mp5990_init_args[0] },
+	{ SENSOR_NUM_CUR_HSCOUT, sensor_dev_mp5990, I2C_BUS5, LTC4282_ADDR, LTC4282_VSENSE_OFFSET,
+	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
+	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, &mp5990_init_args[0] },
+	{ SENSOR_NUM_PWR_HSCIN, sensor_dev_mp5990, I2C_BUS5, LTC4282_ADDR, LTC4282_POWER_OFFSET,
+	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
+	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, &mp5990_init_args[0] },
+};
+
 sensor_cfg EVT_BOM2_sensor_config_table[] = {
 	/* HSC temperature sensor */
 	{ SENSOR_NUM_TEMP_HSC, sensor_dev_g788p81u, I2C_BUS5, TEMP_HSC_ADDR,

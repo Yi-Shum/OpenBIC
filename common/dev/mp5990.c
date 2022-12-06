@@ -29,6 +29,8 @@
 #define MP5990_EIN_SAMPLE_CNT_MAX 0x1000000
 #define MP5990_EIN_ENERGY_CNT_MAX 0x8000
 
+#define MP5990_OCW_SC_REF_OFFSET 0xC5
+
 LOG_MODULE_REGISTER(dev_mp5990);
 
 int mp5990_read_ein(double *val, uint8_t sensor_num)
@@ -214,6 +216,20 @@ uint8_t mp5990_init(uint8_t sensor_num)
 		data[0] = PMBUS_IOUT_OC_FAULT_LIMIT;
 		data[1] = init_args->iout_oc_fault_limit & 0xFF;
 		data[2] = (init_args->iout_oc_fault_limit >> 8) & 0xFF;
+		msg = construct_i2c_message(bus, target_addr, tx_len, data, rx_len);
+		if (i2c_master_write(&msg, retry) != 0) {
+			printf("Failed to write MP5990 register(0x%x)\n", data[0]);
+			goto cleanup;
+		}
+	}
+
+	/* Skip setting iout_oc_fault_limit if given 0xFFFF */
+	if ((init_args->ocw_sc_ref & 0xFFFF) != 0xFFFF) {
+		tx_len = 3;
+		rx_len = 0;
+		data[0] = MP5990_OCW_SC_REF_OFFSET;
+		data[1] = init_args->ocw_sc_ref & 0xFF;
+		data[2] = (init_args->ocw_sc_ref >> 8) & 0xFF;
 		msg = construct_i2c_message(bus, target_addr, tx_len, data, rx_len);
 		if (i2c_master_write(&msg, retry) != 0) {
 			printf("Failed to write MP5990 register(0x%x)\n", data[0]);
