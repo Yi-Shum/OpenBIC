@@ -446,3 +446,37 @@ void IST_PLTRST()
 {
 	reset_tsi_status();
 }
+
+void ISR_APML_ALERT()
+{
+	uint8_t ras_status;
+	if (apml_read_byte(APML_BUS, SB_RMI_ADDR, SBRMI_RAS_STATUS, &ras_status)) {
+		printf("Failed to read RAS status\n");
+	}
+	if (ras_status & 0x0F) {
+		ipmi_msg *msg = (ipmi_msg *)malloc(sizeof(ipmi_msg));
+		if (msg == NULL) {
+			printf("[%s] Failed to allocate memory\n", __func__);
+			return;
+		}
+		memset(msg, 0, sizeof(ipmi_msg));
+
+		msg->data_len = 4;
+		msg->InF_source = SELF;
+		msg->InF_target = BMC_IPMB;
+		msg->netfn = NETFN_OEM_1S_REQ;
+		msg->cmd = CMD_OEM_1S_SEND_APML_ALERT_TO_BMC;
+
+		msg->data[0] = IANA_ID & 0xFF;
+		msg->data[1] = (IANA_ID >> 8) & 0xFF;
+		msg->data[2] = (IANA_ID >> 16) & 0xFF;
+		msg->data[3] = ras_status;
+
+		ipmb_error status = ipmb_read(msg, IPMB_inf_index_map[msg->InF_target]);
+		if (status != IPMB_ERROR_SUCCESS) {
+			printf("Failed to send RAS status 0x%02x to BMC, return %d", ras_status,
+			       status);
+		}
+		SAFE_FREE(msg);
+	}
+}
