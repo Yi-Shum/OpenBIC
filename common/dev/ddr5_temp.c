@@ -21,6 +21,8 @@
 
 #define TS0_LID 0b0010
 #define TS1_LID 0b0110
+#define SPD_LID 0b1010
+#define SPD_DEVICE_CONFIG_OFFSET 0x0B
 #define TS_SENSE_OFFSET 0x31
 
 LOG_MODULE_REGISTER(dev_ddr5_temp);
@@ -77,8 +79,38 @@ uint8_t ddr5_temp_read(uint8_t sensor_num, int *reading)
 	}
 	init_arg->ts1_temp = tmp;
 
-	float val =
-		(init_arg->ts0_temp > init_arg->ts1_temp) ? init_arg->ts0_temp : init_arg->ts1_temp;
+	msg.bus = cfg->port;
+	msg.target_addr = ((SPD_LID << 3) | (init_arg->HID_code & 0x07));
+	msg.tx_len = 2;
+	msg.rx_len = 0;
+	msg.data[0] = SPD_DEVICE_CONFIG_OFFSET;
+	msg.data[1] = 0x00;
+
+	if (i2c_master_write(&msg, retry)) {
+		LOG_WRN("i2c read failed.\n");
+		return SENSOR_FAIL_TO_ACCESS;
+	}
+
+	msg.bus = cfg->port;
+	msg.target_addr = ((SPD_LID << 3) | (init_arg->HID_code & 0x07));
+	msg.tx_len = 1;
+	msg.rx_len = 2;
+	msg.data[0] = TS_SENSE_OFFSET;
+
+	if (i2c_master_read(&msg, retry)) {
+		LOG_WRN("i2c read failed.\n");
+		return SENSOR_FAIL_TO_ACCESS;
+	}
+
+	if (msg.data[1] & BIT(4)) { // negative
+		tmp = -0.25 * (((~((msg.data[1] << 8) | msg.data[0]) >> 2) + 1) & 0x3FF);
+	} else {
+		tmp = 0.25 * ((((msg.data[1] << 8) | msg.data[0]) >> 2) & 0x3FF);
+	}
+	init_arg->spd_temp = tmp;
+
+	float val = MAX(MAX(init_arg->ts0_temp, init_arg->ts1_temp), init_arg->spd_temp);
+
 	sensor_val *sval = (sensor_val *)reading;
 	sval->integer = (int32_t)val;
 	sval->fraction = (int32_t)(val * 1000) % 1000;

@@ -476,6 +476,7 @@ typedef struct _ddr5_init_temp_arg_ {
 	uint8_t port_number;
 	float ts0_temp;
 	float ts1_temp;
+	float spd_temp;
 } ddr5_init_temp_arg;
 
 typedef struct _adm1272_init_arg {
