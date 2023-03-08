@@ -270,7 +270,7 @@ void apml_report_result_check(apml_msg *msg)
 	}
 }
 
-bool post_ddr5_pwr_read(uint8_t sensor_num, void *args, int *reading)
+bool post_ddr5_pwr_read(uint8_t sensor_num, void *args, int *const reading)
 {
 	ARG_UNUSED(args);
 	if (!reading) {
