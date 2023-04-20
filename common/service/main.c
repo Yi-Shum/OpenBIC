@@ -69,4 +69,5 @@ void main(void)
 	pal_device_init();
 	pal_set_sys_status();
 	pal_post_init();
+	printf("!!!");
 }
