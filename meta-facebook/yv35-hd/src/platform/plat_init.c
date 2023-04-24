@@ -27,6 +27,7 @@
 #include "plat_kcs.h"
 #include "rg3mxxb12.h"
 #include "util_worker.h"
+#include "plat_uart.h"
 
 SCU_CFG scu_cfg[] = {
 	//register    value
@@ -66,6 +67,7 @@ void pal_pre_init()
 void pal_post_init()
 {
 	kcs_init();
+	uart_init();
 }
 
 void pal_set_sys_status()

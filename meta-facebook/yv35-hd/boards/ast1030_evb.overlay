@@ -135,6 +135,10 @@
   addr = <0xca2>;
 };
 
+&uart3 {
+	status = "okay";
+};
+
 &uart5 {
   current-speed = <57600>;
 };

@@ -46,6 +46,7 @@
 #define IPMI_OEM_SENSOR_TYPE_SYS_BOOT_STA 0xCA
 #define IPMI_OEM_SENSOR_TYPE_VR 0xCB
 #define IPMI_OEM_SENSOR_TYPE_HDT 0xCC
+#define IPMI_OEM_SENSOR_TYPE_PROT 0xCD
 
 /* event/reading type, see IPMI spec 42.1, table 42-1 */
 #define IPMI_EVENT_TYPE_THRESHOLD 0x01

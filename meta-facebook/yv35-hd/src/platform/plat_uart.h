@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef PLAT_PMIC_H
-#define PLAT_PMIC_H
+#ifndef PLAT_UART_H
+#define PLAT_UART_H
 
-#include <stdint.h>
+#define PROT_UART_PORT "UART_3"
 
-#define MONITOR_PMIC_ERROR_STACK_SIZE 1024
-#define MONITOR_PMIC_ERROR_TIME_MS (3 * 1000) // 30s
+#define UART_RING_BUFFER_SIZE 1024
+#define MAX_NUM_TRIES 512
+#define UART_RX_BUFF_SIZE 64
+#define UART_HANDLER_STACK_SIZE 512
+#define PROT_ERR_STR_LEN 6
+#define PROT_ERR_STR_PREFIX "[E"
+#define PROT_ERR_STR_SUFFIX ']'
 
-#define MAX_LEN_GET_PMIC_ERROR_INFO 7
+#define STR_PREFIX_LEN 5
 
-#define MAX_COUNT_DIMM 8
-#define MAX_COUNT_PMIC_ERROR_TYPE 17
-#define SYS_CPLD_BMC_CHANNEL_ADDR 0x1E // 8 bits
-#define PMIC_FAULT_STATUS_OFFSET 0x0B
-
-void start_monitor_pmic_error_thread();
-void pmic_error_check();
-void read_pmic_error_when_dc_off();
+void uart_init();
 
 #endif
