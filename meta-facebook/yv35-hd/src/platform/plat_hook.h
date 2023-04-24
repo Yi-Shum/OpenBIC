@@ -57,6 +57,7 @@ extern vr_pre_proc_arg vr_pre_read_args[];
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK FUNC
  **************************************************************************************************/
+bool reinit_sensor(uint8_t sensor_num, void *args);
 bool pre_nvme_read(uint8_t sensor_num, void *args);
 bool pre_vr_read(uint8_t sensor_num, void *args);
 bool pre_vol_bat3v_read(uint8_t sensor_num, void *args);

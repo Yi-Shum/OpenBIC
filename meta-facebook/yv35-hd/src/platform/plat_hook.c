@@ -100,6 +100,20 @@ ddr5_init_power_arg ddr5_init_power_args[] = {
  *  PRE-HOOK/POST-HOOK FUNC
  **************************************************************************************************/
 
+bool reinit_sensor(uint8_t sensor_num, void *args)
+{
+	ARG_UNUSED(args);
+	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
+
+	if (!cfg->read) {
+		if (!init_drive_type_delayed(cfg)) {
+			LOG_ERR("Initial fail, sensor_num 0x%X", sensor_num);
+			return false;
+		}
+	}
+	return true;
+}
+
 bool pre_nvme_read(uint8_t sensor_num, void *args)
 {
 	CHECK_NULL_ARG_WITH_RETURN(args, false);
@@ -109,6 +123,9 @@ bool pre_nvme_read(uint8_t sensor_num, void *args)
 bool pre_vr_read(uint8_t sensor_num, void *args)
 {
 	CHECK_NULL_ARG_WITH_RETURN(args, false);
+
+	if (!reinit_sensor(sensor_num, args))
+		return false;
 
 	vr_pre_proc_arg *pre_proc_args = (vr_pre_proc_arg *)args;
 	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
@@ -125,6 +142,7 @@ bool pre_vr_read(uint8_t sensor_num, void *args)
 		LOG_ERR("Failed to set VR page, sensor_num 0x%x", sensor_num);
 		return false;
 	}
+
 	return true;
 }
 

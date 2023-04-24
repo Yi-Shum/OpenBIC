@@ -25,6 +25,7 @@
 #include "plat_i2c.h"
 #include "apml.h"
 #include "plat_class.h"
+#include "plat_gpio.h"
 
 LOG_MODULE_REGISTER(plat_sensor_table);
 
@@ -50,8 +51,8 @@ sensor_cfg plat_sensor_config[] = {
 	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, NULL },
 	{ SENSOR_NUM_TEMP_HSC, sensor_dev_nct7718w, I2C_BUS5, TEMP_HSC_ADDR,
 	  NCT7718W_REMOTE_TEMP_MSB_OFFSET, stby_access, 0, 0, SAMPLE_COUNT_DEFAULT,
-	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
-	  &nct7718w_init_args[0] },
+	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, reinit_sensor, NULL,
+	  NULL, NULL, &nct7718w_init_args[0] },
 
 	/* NVME */
 	{ SENSOR_NUM_TEMP_SSD, sensor_dev_nvme, I2C_BUS2, SSD_ADDR, SSD_TEMP_OFFSET, post_access, 0,
@@ -244,38 +245,44 @@ sensor_cfg plat_sensor_config[] = {
 sensor_cfg adm1278_sensor_config_table[] = {
 	{ SENSOR_NUM_VOL_HSCIN, sensor_dev_adm1278, I2C_BUS5, ADM1278_ADDR, PMBUS_READ_VIN,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, &adm1278_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, NULL, NULL, &adm1278_init_args[0] },
 	{ SENSOR_NUM_CUR_HSCOUT, sensor_dev_adm1278, I2C_BUS5, ADM1278_ADDR, PMBUS_READ_IOUT,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, post_adm1278_cur_read, NULL, &adm1278_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, post_adm1278_cur_read, NULL,
+	  &adm1278_init_args[0] },
 	{ SENSOR_NUM_PWR_HSCIN, sensor_dev_adm1278, I2C_BUS5, ADM1278_ADDR, PMBUS_READ_PIN,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, post_adm1278_pwr_read, NULL, &adm1278_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, post_adm1278_pwr_read, NULL,
+	  &adm1278_init_args[0] },
 
 };
 
 sensor_cfg ltc4282_sensor_config_table[] = {
 	{ SENSOR_NUM_VOL_HSCIN, sensor_dev_ltc4282, I2C_BUS5, LTC4282_ADDR, LTC4282_VSOURCE_OFFSET,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, &ltc4282_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, NULL, NULL, &ltc4282_init_args[0] },
 	{ SENSOR_NUM_CUR_HSCOUT, sensor_dev_ltc4282, I2C_BUS5, LTC4282_ADDR, LTC4282_VSENSE_OFFSET,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, post_ltc4282_cur_read, NULL, &ltc4282_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, post_ltc4282_cur_read, NULL,
+	  &ltc4282_init_args[0] },
 	{ SENSOR_NUM_PWR_HSCIN, sensor_dev_ltc4282, I2C_BUS5, LTC4282_ADDR, LTC4282_POWER_OFFSET,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, post_ltc4282_pwr_read, NULL, &ltc4282_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, post_ltc4282_pwr_read, NULL,
+	  &ltc4282_init_args[0] },
 };
 
 sensor_cfg mp5990_sensor_config_table[] = {
 	{ SENSOR_NUM_VOL_HSCIN, sensor_dev_mp5990, I2C_BUS5, MP5990_ADDR, PMBUS_READ_VIN,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, &mp5990_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, NULL, NULL, &mp5990_init_args[0] },
 	{ SENSOR_NUM_CUR_HSCOUT, sensor_dev_mp5990, I2C_BUS5, MP5990_ADDR, PMBUS_READ_IOUT,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, post_mp5990_cur_read, NULL, &mp5990_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, post_mp5990_cur_read, NULL,
+	  &mp5990_init_args[0] },
 	{ SENSOR_NUM_PWR_HSCIN, sensor_dev_mp5990, I2C_BUS5, MP5990_ADDR, PMBUS_READ_PIN,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, post_mp5990_pwr_read, NULL, &mp5990_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, post_mp5990_pwr_read, NULL,
+	  &mp5990_init_args[0] },
 };
 
 sensor_cfg xdpe19283b_sensor_config_table[] = {
@@ -551,14 +558,14 @@ sensor_cfg tps53689_sensor_config_table[] = {
 sensor_cfg g788p81u_sensor_config_table[] = {
 	{ SENSOR_NUM_TEMP_HSC, sensor_dev_g788p81u, I2C_BUS5, TEMP_HSC_ADDR,
 	  G788P81U_REMOTE_TEMP_OFFSET, stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
-	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
+	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, reinit_sensor, NULL, NULL, NULL,
 	  &g788p81u_init_args[0] },
 };
 
 sensor_cfg mp5990_temp_sensor_config_table[] = {
 	{ SENSOR_NUM_TEMP_HSC, sensor_dev_mp5990, I2C_BUS5, MP5990_ADDR, PMBUS_READ_TEMPERATURE_1,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
-	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, &mp5990_init_args[0] },
+	  SENSOR_INIT_STATUS, reinit_sensor, NULL, NULL, NULL, &mp5990_init_args[0] },
 };
 
 void pal_extend_sensor_config()
@@ -691,4 +698,15 @@ void load_sensor_config(void)
 	sensor_config_count = SENSOR_CONFIG_SIZE;
 
 	pal_extend_sensor_config();
+
+	uint8_t board_revision = get_board_revision();
+	uint8_t board_stage = (board_revision & 0x0F);
+	if ((board_stage == SYS_BOARD_PVT) && (gpio_get(AUTH_PRSNT_BIC_N) == GPIO_LOW)) {
+		for (int i = 0; i < sensor_config_count; i++) {
+			sensor_cfg *cfg = &sensor_config[i];
+			if ((cfg->port == I2C_BUS5) && (cfg->type != sensor_dev_ast_adc)) {
+				cfg->port = I2C_BUS3;
+			}
+		}
+	}
 }
