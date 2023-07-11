@@ -21,6 +21,10 @@
 #include "power_status.h"
 #include <logging/log.h>
 #include "libutil.h"
+#include "plat_def.h"
+
+#ifdef ENABLE_APML
+#include "plat_apml.h"
 
 LOG_MODULE_REGISTER(apml);
 
@@ -138,6 +142,7 @@ static uint8_t access_MCA(apml_msg *msg)
 
 	if (!wait_HwAlert_set(msg, RETRY_MAX)) {
 		LOG_ERR("HwAlert not be set, retry %d times.", RETRY_MAX);
+		return APML_ERROR;
 	}
 
 	if (read_MCA_response(msg)) {
@@ -202,6 +207,7 @@ static uint8_t access_CPUID(apml_msg *msg)
 
 	if (!wait_HwAlert_set(msg, RETRY_MAX)) {
 		LOG_ERR("HwAlert not be set, retry %d times.", RETRY_MAX);
+		return APML_ERROR;
 	}
 
 	if (read_CPUID_response(msg)) {
@@ -376,6 +382,48 @@ uint8_t apml_read(apml_msg *msg)
 	return APML_SUCCESS;
 }
 
+static void apml_recovery()
+{
+	uint8_t read_data = 0x00;
+
+	if (apml_read_byte(APML_BUS, SB_RMI_ADDR, SBRMI_REVISION, &read_data)) {
+		LOG_ERR("Failed to read SBRMI revision.");
+		return;
+	}
+	if (read_data != SB_RMI_REVISION) {
+		LOG_INF("Recovery SBRMI.");
+		if (apml_read_byte(APML_BUS, SB_TSI_ADDR, SBTSI_CONFIG, &read_data)) {
+			LOG_ERR("Failed to read SBTSI config.");
+			return;
+		}
+
+		if (apml_write_byte(APML_BUS, SB_TSI_ADDR, SBTSI_CONFIG_WRITE,
+				    read_data | RMI_SOFT_RESET_BIT)) {
+			LOG_ERR("Failed to write SBTSI config.");
+			return;
+		}
+
+		uint8_t i = 0;
+		for (; i < RETRY_MAX; i++) {
+			read_data = 0;
+			if (apml_read_byte(APML_BUS, SB_TSI_ADDR, SBTSI_CONFIG, &read_data)) {
+				LOG_ERR("Failed to read SBTSI config.");
+				return;
+			}
+
+			if (!(read_data & RMI_SOFT_RESET_BIT)) {
+				break;
+			}
+			k_msleep(10);
+		}
+
+		if (i == RETRY_MAX) {
+			LOG_ERR("RMISoftReset bit is not cleared.");
+		}
+	}
+	return;
+}
+
 static void apml_handler(void *arvg0, void *arvg1, void *arvg2)
 {
 	uint8_t ret;
@@ -412,6 +460,7 @@ static void apml_handler(void *arvg0, void *arvg1, void *arvg2)
 			if (msg_data.error_cb_fn) {
 				msg_data.error_cb_fn(&msg_data);
 			}
+			apml_recovery();
 		} else {
 			if (msg_data.cb_fn) {
 				msg_data.cb_fn(&msg_data);
@@ -427,6 +476,7 @@ void apml_init()
 	k_msgq_init(&apml_msgq, apml_msgq_buffer, sizeof(apml_msg), APML_MSGQ_LEN);
 	memset(apml_resp_buffer, 0xFF, sizeof(apml_resp_buffer));
 
+	apml_recovery();
 	k_thread_create(&apml_thread, apml_handler_stack, K_THREAD_STACK_SIZEOF(apml_handler_stack),
 			apml_handler, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&apml_thread, "APML_handler");
@@ -436,3 +486,5 @@ void fatal_error_happened()
 {
 	is_fatal_error_happened = true;
 }
+
+#endif
