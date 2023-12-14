@@ -131,15 +131,15 @@ static void clear_pmic_error(uint8_t dimm_id)
 			msg->bus = (dimm_id < (MAX_COUNT_DIMM / 2)) ? I2C_BUS11 : I2C_BUS12;
 			msg->target_addr = PMIC_addr[dimm_id % 4];
 			msg->tx_len = 1;
-			msg->rx_len = 1;
-			msg->data[0] = 0x39;
+			msg->rx_len = 4;
+			msg->data[0] = 0x04;
 
 			if (i2c_master_read(msg, retry)) {
 				LOG_ERR("Failed to read PMIC R39.");
 				continue;
 			}
 
-			if ((msg->data[0] == 0x74) || (msg->data[0] == 0x5a)) {
+			if (!(msg->data[0] || msg->data[1] || msg->data[2] || msg->data[3])) {
 				break;
 			}
 		}
