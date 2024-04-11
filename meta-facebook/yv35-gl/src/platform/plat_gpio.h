@@ -35,7 +35,7 @@
     gpio_name_to_num(Reserve_GPIOB0) \
     gpio_name_to_num(RST_USB_HUB_N_R) \
     gpio_name_to_num(A_P3V_BAT_SCALED_EN_R) \
-    gpio_name_to_num(Reserve_GPIOB3) \
+    gpio_name_to_num(DAM_BIC_R_EN) \
     gpio_name_to_num(Reserve_GPIOB4) \
     gpio_name_to_num(FM_SLPS4_PLD_N) \
     gpio_name_to_num(FM_CPU0_CD_INIT_ERROR) \
@@ -235,27 +235,9 @@
 
 #define gpio_name_to_num(x) x,
 enum _GPIO_NUMS_ {
-    name_gpioA
-    name_gpioB
-    name_gpioC
-    name_gpioD
-    name_gpioE
-    name_gpioF
-    name_gpioG
-    name_gpioH
-    name_gpioI
-    name_gpioJ
-    name_gpioK
-    name_gpioL
-    name_gpioM
-    name_gpioN
-    name_gpioO
-    name_gpioP
-    name_gpioQ
-    name_gpioR
-    name_gpioS
-    name_gpioT
-    name_gpioU
+	name_gpioA name_gpioB name_gpioC name_gpioD name_gpioE name_gpioF name_gpioG name_gpioH
+		name_gpioI name_gpioJ name_gpioK name_gpioL name_gpioM name_gpioN name_gpioO
+			name_gpioP name_gpioQ name_gpioR name_gpioS name_gpioT name_gpioU
 };
 
 extern enum _GPIO_NUMS_ GPIO_NUMS;

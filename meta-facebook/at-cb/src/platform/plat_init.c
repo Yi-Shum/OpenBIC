@@ -25,6 +25,7 @@
 #include "util_worker.h"
 #include "plat_pldm_monitor.h"
 #include "plat_dev.h"
+#include "plat_pldm_fw_update.h"
 
 SCU_CFG scu_cfg[] = {
 	//register    value
@@ -43,7 +44,10 @@ void pal_pre_init()
 	}
 
 	scu_init(scu_cfg, sizeof(scu_cfg) / sizeof(SCU_CFG));
+	init_asic_jtag_select_ioexp();
 	check_accl_device_presence_status_via_ioexp();
+	get_acb_power_status();
+	init_sw_heartbeat_work();
 	init_plat_worker(CONFIG_MAIN_THREAD_PRIORITY + 1); // work queue for low priority jobs
 }
 
@@ -60,9 +64,10 @@ void pal_post_init()
 		if (board_revision > EVT2_STAGE) {
 			plat_accl_power_cable_present_check();
 		}
-	} else {
-		// open usb hub while bic boot up
-		gpio_set(RST_USB_HUB0_N, GPIO_HIGH);
+	}
+
+	if (board_revision > EVT2_STAGE) {
+		init_accl_presence_check_work();
 	}
 }
 
@@ -73,8 +78,6 @@ void pal_device_init()
 
 void pal_set_sys_status()
 {
-	get_acb_power_status();
-	init_sw_heartbeat_work();
 	gpio_set(ACB_BIC_READY_N, GPIO_LOW);
 	return;
 }

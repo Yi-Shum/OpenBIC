@@ -121,6 +121,7 @@ void pal_post_init()
 	if (is_ac_lost()) {
 		plat_ssd_present_check();
 	}
+	init_accl_presence_check_work();
 }
 
 void pal_device_init()
@@ -132,6 +133,7 @@ void pal_set_sys_status()
 {
 	set_DC_status(MEB_NORMAL_PWRGD_BIC);
 	set_reset_smb4_mux_pin();
+	init_ssd_power_fault_work();
 }
 
 #define DEF_PLAT_CONFIG_PRIORITY 77

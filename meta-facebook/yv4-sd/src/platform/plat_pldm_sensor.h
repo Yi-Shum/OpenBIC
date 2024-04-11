@@ -27,15 +27,25 @@
 #define ADDR_VR_CPU1 (0XC6 >> 1)
 #define ADDR_VR_PVDDIO (0XC6 >> 1)
 #define ADDR_VR_PVDD11 (0XE4 >> 1)
+
 #define ADDR_X8_INA233 (0x8A >> 1)
 #define ADDR_X16_INA233 (0x82 >> 1)
+#define ADDR_E1S_BOOT_INA233 (0x8A >> 1)
+#define ADDR_E1S_DATA_INA233 (0x80 >> 1)
+#define ADDR_X8_RETIMER (0x46 >> 1)
+#define ADDR_X16_RETIMER (0x40 >> 1)
 #define ADDR_NVME (0xD4 >> 1)
 
 #define OFFSET_TMP75_TEMP 0x00
 #define OFFSET_NVME_TEMP 0x00
 
+#define NUM_SOC_PACKAGE_PWR 0x0055
+
 #define UPDATE_INTERVAL_1S 1
 #define UPDATE_INTERVAL_3S 3
+#define UPDATA_INTERNAL_1HR 3600
+
+#define VR_DEVICE_UNKNOWN 0xFF
 
 enum SENSOR_THREAD_LIST {
 	ADC_SENSOR_THREAD_ID = 0,
@@ -43,11 +53,18 @@ enum SENSOR_THREAD_LIST {
 	MB_TEMP_SENSOR_THREAD_ID,
 	CPU_SENSOR_THREAD_ID,
 	INA233_SENSOR_THREAD_ID,
+	DIMM_SENSOR_THREAD_ID,
 	MAX_SENSOR_THREAD_ID,
+};
+
+enum GET_VR_DEV_STATUS {
+	GET_VR_DEV_SUCCESS = 0,
+	GET_VR_DEV_FAILED,
 };
 
 int plat_pldm_sensor_get_sensor_count(int thread_id);
 void plat_pldm_sensor_get_pdr_numeric_sensor(int thread_id, int sensor_num,
 					     PDR_numeric_sensor *numeric_sensor_table);
+uint8_t plat_pldm_sensor_get_vr_dev(uint8_t *vr_dev);
 
 #endif

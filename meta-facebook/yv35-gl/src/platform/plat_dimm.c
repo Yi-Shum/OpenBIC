@@ -18,6 +18,7 @@
 #include "libutil.h"
 #include "rg3mxxb12.h"
 #include "p3h284x.h"
+#include "intel_peci.h"
 
 LOG_MODULE_REGISTER(plat_dimm);
 
@@ -27,8 +28,8 @@ k_tid_t get_dimm_info_tid;
 
 struct k_mutex i3c_dimm_mutex;
 
-uint8_t pmic_i3c_addr_list[MAX_COUNT_DIMM / 2] = { PMIC_A0_A4_ADDR, PMIC_A1_A5_ADDR, PMIC_A2_A6_ADDR,
-						   PMIC_A3_A7_ADDR };
+uint8_t pmic_i3c_addr_list[MAX_COUNT_DIMM / 2] = { PMIC_A0_A4_ADDR, PMIC_A1_A5_ADDR,
+						   PMIC_A2_A6_ADDR, PMIC_A3_A7_ADDR };
 uint8_t spd_i3c_addr_list[MAX_COUNT_DIMM / 2] = { DIMM_SPD_A0_A4_ADDR, DIMM_SPD_A1_A5_ADDR,
 						  DIMM_SPD_A2_A6_ADDR, DIMM_SPD_A3_A7_ADDR };
 
@@ -122,20 +123,22 @@ void get_dimm_info_handler()
 			}
 
 			uint8_t slave_port_setting = (dimm_id / (MAX_COUNT_DIMM / 2)) ?
-								   I3C_HUB_TO_DIMMEFGH :
-								   I3C_HUB_TO_DIMMABCD;
+							     I3C_HUB_TO_DIMMEFGH :
+							     I3C_HUB_TO_DIMMABCD;
 
 			if (i3c_hub_type == RG3M87B12_DEVICE_INFO) {
-				if (!rg3mxxb12_set_slave_port(I3C_BUS4, RG3MXXB12_DEFAULT_STATIC_ADDRESS,
-						      slave_port_setting)) {
+				if (!rg3mxxb12_set_slave_port(I3C_BUS4,
+							      RG3MXXB12_DEFAULT_STATIC_ADDRESS,
+							      slave_port_setting)) {
 					clear_unaccessible_dimm_data(dimm_id);
 					LOG_ERR("Failed to set slave port to slave port: 0x%x",
 						slave_port_setting);
 					continue;
 				}
 			} else {
-				if (!p3h284x_set_slave_port(I3C_BUS4, P3H284X_DEFAULT_STATIC_ADDRESS,
-						      slave_port_setting)) {
+				if (!p3h284x_set_slave_port(I3C_BUS4,
+							    P3H284X_DEFAULT_STATIC_ADDRESS,
+							    slave_port_setting)) {
 					clear_unaccessible_dimm_data(dimm_id);
 					LOG_ERR("Failed to set slave port to slave port: 0x%x",
 						slave_port_setting);
@@ -463,4 +466,14 @@ void clear_unaccessible_dimm_data(uint8_t dimm_id)
 	       sizeof(dimm_data[dimm_id].pmic_pwr_data));
 	memset(dimm_data[dimm_id].spd_temp_data, SENSOR_FAIL,
 	       sizeof(dimm_data[dimm_id].spd_temp_data));
+}
+
+void pal_cal_total_dimm_power(intel_peci_unit unit_info, uint32_t diff_energy, uint32_t diff_time,
+			      int *reading)
+{
+	CHECK_NULL_ARG(reading);
+
+	float pwr_scale = (float)(1 / (float)(1 << unit_info.energy_unit));
+
+	*reading = ((float)diff_energy / (float)diff_time) * pwr_scale;
 }

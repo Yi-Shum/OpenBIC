@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
+#include <soc.h>
 #include "hal_gpio.h"
 #include "hal_peci.h"
 #include "power_status.h"
@@ -33,17 +35,20 @@
 #include "plat_pldm_monitor.h"
 #include "plat_class.h"
 #include "plat_i3c.h"
+#include "plat_dimm.h"
 #include "pcc.h"
 #include "plat_kcs.h"
 
 SCU_CFG scu_cfg[] = {
 	//register    value
+	{ 0x7e6e2610, 0x04020000 },
 	{ 0x7e6e2618, 0x00c00000 },
 };
 
 void pal_pre_init()
 {
 	scu_init(scu_cfg, sizeof(scu_cfg) / sizeof(SCU_CFG));
+	aspeed_print_sysrst_info();
 	apml_init();
 
 	/* init i2c target */
@@ -92,6 +97,7 @@ void pal_post_init()
 	kcs_init();
 	pldm_load_state_effecter_table(PLAT_PLDM_MAX_STATE_EFFECTER_IDX);
 	pldm_assign_gpio_effecter_id(PLAT_EFFECTER_ID_GPIO_HIGH_BYTE);
+	start_get_dimm_info_thread();
 }
 
 void pal_set_sys_status()
@@ -100,6 +106,8 @@ void pal_set_sys_status()
 	set_DC_on_delayed_status();
 	set_post_status(FM_BIOS_POST_CMPLT_BIC_N);
 	sync_bmc_ready_pin();
+	set_sys_ready_pin(BIC_READY_R);
+	reset_usb_hub();
 
 	if (get_post_status()) {
 		apml_recovery();

@@ -396,11 +396,6 @@ void OEM_1S_FW_UPDATE(ipmi_msg *msg)
 	switch (target) {
 	case CB_COMPNT_BIC:
 	case (CB_COMPNT_BIC | IS_SECTOR_END_MASK):
-		// Expect BIC firmware size not bigger than 320k
-		if (offset > BIC_UPDATE_MAX_OFFSET) {
-			msg->completion_code = CC_PARAM_OUT_OF_RANGE;
-			return;
-		}
 		if (offset == 0) {
 			// Set default fw update retry count at first package
 			set_default_retry_count(FW_UPDATE_RETRY_MAX_COUNT);
@@ -768,18 +763,8 @@ void OEM_1S_BRIDGE_I2C_MSG_BY_COMPNT(ipmi_msg *msg)
 
 	switch (dev_id) {
 	case PCIE_DEVICE_ID2:
-		if (asic_card_info[card_id].card_type == ASIC_CARD_WITH_ARTEMIS_MODULE) {
-			address = ACCL_ARTEMIS_MODULE_1_ADDR;
-		} else {
-			address = ACCL_FREYA_1_ADDR;
-		}
-		break;
 	case PCIE_DEVICE_ID3:
-		if (asic_card_info[card_id].card_type == ASIC_CARD_WITH_ARTEMIS_MODULE) {
-			address = ACCL_ARTEMIS_MODULE_2_ADDR;
-		} else {
-			address = ACCL_FREYA_2_ADDR;
-		}
+		address = ACCL_ARTEMIS_MODULE_2_ADDR;
 		break;
 	default:
 		LOG_ERR("Invalid device id: 0x%x", dev_id);

@@ -155,6 +155,27 @@ bool get_e1s_power_good(uint8_t index)
 		LOG_ERR("UNKNOWN CARD TYPE");
 		break;
 	}
+
+	return power_good;
+}
+
+bool get_edge_power_good()
+{
+	uint8_t card_type = get_card_type();
+	bool power_good = false;
+
+	switch (card_type) {
+	case CARD_TYPE_OPA:
+		power_good = gpio_get(OPA_PWRGD_P12V_MAIN);
+		break;
+	case CARD_TYPE_OPB:
+		power_good = gpio_get(OPB_PWRGD_P12V_MAIN);
+		break;
+	default:
+		LOG_ERR("UNKNOWN CARD TYPE");
+		break;
+	}
+
 	return power_good;
 }
 
@@ -186,6 +207,7 @@ void init_sequence_status()
 	case CARD_TYPE_OPA:
 		if (gpio_get(OPA_PERST_BIC_RTM_N) == GPIO_HIGH) {
 			is_retimer_sequence_done = true;
+			check_pcie_retimer_type();
 			cache_pcie_retimer_version();
 		}
 
@@ -808,7 +830,7 @@ bool power_on_handler(uint8_t initial_stage)
 	while (enable_power_on_handler == true) {
 		switch (control_stage) { // Enable VR power machine
 		case BOARD_POWER_ON_STAGE0:
-			if (board_revision == DVT_STAGE && card_type == CARD_TYPE_OPB) {
+			if (board_revision != EVT_STAGE && card_type == CARD_TYPE_OPB) {
 				control_power_stage(ENABLE_POWER_MODE, OPB_BIC_MAIN_PWR_EN_R);
 			}
 			break;
@@ -860,8 +882,9 @@ bool power_on_handler(uint8_t initial_stage)
 				break;
 			}
 			if (check_power_stage(ENABLE_POWER_MODE, CHECK_POWER_SEQ_02) != 0) {
-				if (board_revision == DVT_STAGE && card_type == CARD_TYPE_OPB) {
-					control_power_stage(DISABLE_POWER_MODE, OPB_BIC_MAIN_PWR_EN_R);
+				if (board_revision != EVT_STAGE && card_type == CARD_TYPE_OPB) {
+					control_power_stage(DISABLE_POWER_MODE,
+							    OPB_BIC_MAIN_PWR_EN_R);
 				}
 				LOG_ERR("PWRGD_P12V_MAIN is not enabled!");
 				check_power_ret = -1;
@@ -929,6 +952,7 @@ bool power_on_handler(uint8_t initial_stage)
 					break;
 				}
 				is_retimer_sequence_done = true;
+				check_pcie_retimer_type();
 				cache_pcie_retimer_version();
 			}
 			check_power_ret = 0;
@@ -1005,7 +1029,7 @@ bool power_off_handler(uint8_t initial_stage)
 			control_power_stage(DISABLE_POWER_MODE, OPA_EN_P0V9_VR);
 			break;
 		case BOARD_POWER_OFF_STAGE2:
-			if (board_revision == DVT_STAGE && card_type == CARD_TYPE_OPB) {
+			if (board_revision != EVT_STAGE && card_type == CARD_TYPE_OPB) {
 				control_power_stage(DISABLE_POWER_MODE, OPB_BIC_MAIN_PWR_EN_R);
 			}
 			break;
@@ -1085,10 +1109,13 @@ bool power_off_handler(uint8_t initial_stage)
 			control_stage = BOARD_POWER_OFF_STAGE2;
 			break;
 		case BOARD_POWER_OFF_STAGE2:
-			if (check_power_stage(DISABLE_POWER_MODE, CHECK_POWER_SEQ_02) != 0) {
-				LOG_ERR("OPB_BIC_MAIN_PWR_EN_R is not disabled!");
-				check_power_ret = -1;
-				break;
+			if (board_revision != EVT_STAGE && card_type == CARD_TYPE_OPB) {
+				if (check_power_stage(DISABLE_POWER_MODE, CHECK_POWER_SEQ_02) !=
+				    0) {
+					LOG_ERR("OPB_BIC_MAIN_PWR_EN_R is not disabled!");
+					check_power_ret = -1;
+					break;
+				}
 			}
 			enable_power_off_handler = false;
 			break;

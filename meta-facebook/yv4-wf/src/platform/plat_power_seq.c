@@ -19,21 +19,20 @@
 #include <logging/log.h>
 #include "libutil.h"
 #include "power_status.h"
-//#include "plat_class.h"
+#include "plat_class.h"
 #include "plat_gpio.h"
-#include "plat_power_seq.h"
 #include "plat_isr.h"
+#include "plat_power_seq.h"
 
 LOG_MODULE_REGISTER(plat_power_seq);
 
-static void cxl_ready_handler();
-
 K_WORK_DELAYABLE_DEFINE(set_dc_on_5s_work, set_DC_on_delayed_status);
 K_WORK_DELAYABLE_DEFINE(cxl_ready_thread, cxl_ready_handler);
-K_WORK_DELAYABLE_DEFINE(enable_asic1_power_on_rst_work, enable_asic1_power_on_rst);
-K_WORK_DELAYABLE_DEFINE(enable_asic2_power_on_rst_work, enable_asic2_power_on_rst);
+K_WORK_DELAYABLE_DEFINE(enable_asic1_rst_work, enable_asic1_rst);
+K_WORK_DELAYABLE_DEFINE(enable_asic2_rst_work, enable_asic2_rst);
 
 static bool is_cxl_power_on[MAX_CXL_ID] = { false, false };
+static bool is_cxl_ready[MAX_CXL_ID] = { false, false };
 
 cxl_power_control_gpio cxl_power_ctrl_pin[MAX_CXL_ID] = {
 	[0] = {
@@ -95,13 +94,15 @@ cxl_power_good_gpio cxl_power_good_pin[MAX_CXL_ID] = {
 	.pvtt_cd_dimm_pg = PWRGD_PVTT_AB_ASIC2, },
 };
 
-void enable_asic1_power_on_rst()
+void enable_asic1_rst()
 {
+	gpio_set(SYS_RST_ASIC1_N_R, POWER_ON);
 	gpio_set(PWR_ON_RST_ASIC1_N, POWER_ON);
 }
 
-void enable_asic2_power_on_rst()
+void enable_asic2_rst()
 {
+	gpio_set(SYS_RST_ASIC2_N_R, POWER_ON);
 	gpio_set(PWR_ON_RST_ASIC2_N, POWER_ON);
 }
 
@@ -124,7 +125,11 @@ void execute_power_on_sequence()
 	}
 
 	// TODO: check E1S present
-	gpio_set(EN_P3V3_E1S_0_R, POWER_ON);
+	if (get_board_revision() == BOARD_POC) {
+		gpio_set(POC_EN_P3V3_E1S_0_R, POWER_ON);
+	} else {
+		gpio_set(EN_P3V3_E1S_0_R, POWER_ON);
+	}
 	gpio_set(EN_P12V_E1S_0_R, POWER_ON);
 
 	ret = power_on_handler(CXL_ID_0, CLK_POWER_ON_STAGE);
@@ -191,21 +196,6 @@ void enable_powers(int cxl_id, int pwr_stage)
 	case ASIC_POWER_ON_STAGE_2:
 		gpio_set(cxl_power_ctrl_pin[cxl_id].p1v2_asic_en, POWER_ON);
 		gpio_set(cxl_power_ctrl_pin[cxl_id].p1v8_asic_en, POWER_ON);
-		// set PWR_ON_RST_N after P1V8 enable 25ms
-		switch (cxl_id) {
-		case CXL_ID_0:
-			k_work_schedule(&enable_asic1_power_on_rst_work,
-					K_MSEC(PWR_ON_RST_DELAY_MSEC));
-			break;
-		case CXL_ID_1:
-			k_work_schedule(&enable_asic2_power_on_rst_work,
-					K_MSEC(PWR_ON_RST_DELAY_MSEC));
-			break;
-		default:
-			LOG_ERR("Unknown CXL id %d to enable PWR_ON_RST", cxl_id);
-			break;
-		}
-		gpio_set(cxl_power_ctrl_pin[cxl_id].sys_rst, POWER_ON);
 		break;
 	case DIMM_POWER_ON_STAGE_1:
 		gpio_set(cxl_power_ctrl_pin[cxl_id].pvpp_ab_dimm_en, POWER_ON);
@@ -218,6 +208,17 @@ void enable_powers(int cxl_id, int pwr_stage)
 	case DIMM_POWER_ON_STAGE_3:
 		gpio_set(cxl_power_ctrl_pin[cxl_id].pvtt_ab_dimm_en, POWER_ON);
 		gpio_set(cxl_power_ctrl_pin[cxl_id].pvtt_cd_dimm_en, POWER_ON);
+		switch (cxl_id) {
+		case CXL_ID_0:
+			k_work_schedule(&enable_asic1_rst_work, K_MSEC(PWR_RST_DELAY_MSEC));
+			break;
+		case CXL_ID_1:
+			k_work_schedule(&enable_asic2_rst_work, K_MSEC(PWR_RST_DELAY_MSEC));
+			break;
+		default:
+			LOG_ERR("Unknown CXL id %d to enable PWR_ON_RST", cxl_id);
+			break;
+		}
 		break;
 	default:
 		LOG_ERR("Unknown stage 0x%x to enable power", pwr_stage);
@@ -305,8 +306,8 @@ bool is_power_controlled(int cxl_id, int power_pin, uint8_t check_power_status, 
 		return true;
 	} else {
 		// TODO: Add event to BMC
-		LOG_ERR("Failed to power %s CXL %d %s (gpio num %d)", check_power_status ? "on" : "off",
-			cxl_id + 1, power_name, power_pin);
+		LOG_ERR("Failed to power %s CXL %d %s (gpio num %d)",
+			check_power_status ? "on" : "off", cxl_id + 1, power_name, power_pin);
 		return false;
 	}
 }
@@ -322,7 +323,11 @@ void execute_power_off_sequence()
 	}
 
 	// TODO: check E1S present
-	gpio_set(EN_P3V3_E1S_0_R, POWER_OFF);
+	if (get_board_revision() == BOARD_POC) {
+		gpio_set(POC_EN_P3V3_E1S_0_R, POWER_OFF);
+	} else {
+		gpio_set(EN_P3V3_E1S_0_R, POWER_OFF);
+	}
 	gpio_set(EN_P12V_E1S_0_R, POWER_OFF);
 
 	gpio_set(PG_CARD_OK, POWER_OFF);
@@ -338,6 +343,7 @@ void execute_power_off_sequence()
 
 	set_DC_on_delayed_status();
 
+	is_cxl_ready[CXL_ID_0] = false;
 	ret = power_off_handler(CXL_ID_0, DIMM_POWER_OFF_STAGE_1);
 	if (ret == 0) {
 		is_cxl_power_on[CXL_ID_0] = false;
@@ -347,6 +353,7 @@ void execute_power_off_sequence()
 		LOG_ERR("CXL 1 power off fail");
 	}
 
+	is_cxl_ready[CXL_ID_1] = false;
 	ret = power_off_handler(CXL_ID_1, DIMM_POWER_OFF_STAGE_1);
 	if (ret == 0) {
 		is_cxl_power_on[CXL_ID_1] = false;
@@ -362,6 +369,7 @@ void execute_power_off_sequence()
 		CLEARBITS(ioe2_output_value, IOE_P00,
 			  IOE_P03) // Disable P0~P3 to switch mux to CXL.
 		set_ioe_value(ADDR_IOE2, TCA9555_OUTPUT_PORT_REG_0, ioe2_output_value);
+		set_vr_monitor_status(false);
 	}
 }
 
@@ -501,7 +509,7 @@ int check_powers_disabled(int cxl_id, int pwr_stage)
 	return 0;
 }
 
-static void cxl_ready_handler()
+void cxl_ready_handler()
 {
 	/* TODO:
 	 * In normal states, DIMM and PMIC muxs should be switch to BIC after checking CXL heartbeat is ready. However, WF's heartbeat is not ready yet
@@ -513,7 +521,24 @@ static void cxl_ready_handler()
 	if (get_ioe_value(ADDR_IOE2, TCA9555_OUTPUT_PORT_REG_0, &value) == 0) {
 		value |= IOE_SWITCH_MUX_TO_BIC; // Enable P0~P3 to switch mux to BIC.
 		set_ioe_value(ADDR_IOE2, TCA9555_OUTPUT_PORT_REG_0, value);
+		set_vr_monitor_status(true);
 	}
 
+	is_cxl_ready[CXL_ID_0] = true;
+	LOG_INF("CXL1 is ready");
+	is_cxl_ready[CXL_ID_1] = true;
+	LOG_INF("CXL2 is ready");
+
 	return;
+}
+
+bool get_cxl_ready_status(uint8_t cxl_id)
+{
+	return is_cxl_ready[cxl_id];
+}
+
+bool cxl_ready_access(uint8_t sensor_num)
+{
+	uint8_t cxl_id = sensor_num / 4;
+	return get_cxl_ready_status(cxl_id);
 }

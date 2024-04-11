@@ -125,13 +125,19 @@ int i3c_attach(I3C_MSG *msg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(msg, -EINVAL);
 
-	int ret = 0;
-	struct i3c_dev_desc *desc;
+	int ret = 0, pos = 0;
+	struct i3c_dev_desc *desc = NULL;
 
 	if (!dev_i3c[msg->bus]) {
 		LOG_ERR("Failed to attach address 0x%x due to undefined bus%u", msg->target_addr,
 			msg->bus);
 		return -ENODEV;
+	}
+
+	desc = find_matching_desc(dev_i3c[msg->bus], msg->target_addr, &pos);
+	if (desc != NULL) {
+		LOG_INF("addr 0x%x already attach", msg->target_addr);
+		return -ret;
 	}
 
 	desc = &i3c_desc_table[i3c_desc_count];
@@ -204,8 +210,8 @@ int i3c_brocast_ccc(I3C_MSG *msg, uint8_t ccc_id, uint8_t ccc_addr)
 
 	ret = i3c_master_send_ccc(dev_i3c[msg->bus], &ccc);
 	if (ret != 0) {
-		LOG_ERR("Failed to broadcast ccc 0x%x to addresses 0x%x due to undefined bus%u",
-			ccc_id, ccc_addr, ret);
+		LOG_ERR("Failed to broadcast ccc 0x%x to addresses 0x%x bus%u, ret%d",
+                       ccc_id, ccc_addr, msg->bus, ret);
 	}
 
 	return -ret;
@@ -316,6 +322,19 @@ int i3c_controller_write(I3C_MSG *msg)
 	return true;
 }
 
+int i3c_set_pid(I3C_MSG *msg, uint16_t slot_pid)
+{
+	CHECK_NULL_ARG_WITH_RETURN(msg, -EINVAL);
+
+	int ret = i3c_set_pid_extra_info(dev_i3c[msg->bus], slot_pid);
+	if (ret != 0) {
+		LOG_ERR("Failed to set pid to bus 0x%d, ret: %d", msg->bus, ret);
+		return false;
+	}
+
+	return true;
+}
+
 void util_init_i3c(void)
 {
 #ifdef DEV_I3C_0
@@ -379,12 +398,11 @@ void util_init_i3c(void)
 
 static int get_bus_id(struct i3c_dev_desc *desc)
 {
-	char i3c_dev_name[I3C_DEV_STR_LEN] = {0};
+	char i3c_dev_name[I3C_DEV_STR_LEN] = { 0 };
 	const char delim[2] = "_";
 	char *saveptr = NULL;
 	char *substr = NULL;
 	int bus_id;
-
 
 	strncpy(i3c_dev_name, desc->master_dev->name, I3C_DEV_STR_LEN);
 
@@ -417,7 +435,8 @@ static int find_dev_i3c_idx(struct i3c_dev_desc *desc)
 			return -1;
 		}
 
-		if ((table_bus_id == bus_id) && (desc->info.dynamic_addr == desc_ptr->info.dynamic_addr)) {
+		if ((table_bus_id == bus_id) &&
+		    (desc->info.dynamic_addr == desc_ptr->info.dynamic_addr)) {
 			return i;
 		}
 	}
@@ -433,6 +452,7 @@ static struct i3c_ibi_payload *ibi_write_requested(struct i3c_dev_desc *desc)
 	if (idx < 0) {
 		LOG_ERR("%s: find dev i3c idx failed. idx = %d", __func__, idx);
 	}
+	i3c_ibi_dev_table[idx].i3c_payload.max_payload_size = I3C_MAX_DATA_SIZE;
 	i3c_ibi_dev_table[idx].i3c_payload.size = 0;
 	i3c_ibi_dev_table[idx].i3c_payload.buf = i3c_ibi_dev_table[idx].data_rx;
 
@@ -453,8 +473,7 @@ static struct i3c_ibi_callbacks i3c_ibi_def_callbacks = {
 	.write_done = ibi_write_done,
 };
 
-int
-i3c_controller_ibi_init(I3C_MSG *msg)
+int i3c_controller_ibi_init(I3C_MSG *msg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(msg, -EINVAL);
 
@@ -496,24 +515,26 @@ i3c_controller_ibi_init(I3C_MSG *msg)
 		LOG_ERR("Failed to send aasa");
 	}
 
-	ret = i3c_master_send_getpid(dev_i3c[msg->bus], target->info.dynamic_addr, &target->info.pid);
+	ret = i3c_master_send_getpid(dev_i3c[msg->bus], target->info.dynamic_addr,
+				     &target->info.pid);
 	if (ret) {
 		LOG_ERR("Failed to get pid");
 	}
 
-	ret = i3c_master_send_getbcr(dev_i3c[msg->bus], target->info.dynamic_addr, &target->info.bcr);
+	ret = i3c_master_send_getbcr(dev_i3c[msg->bus], target->info.dynamic_addr,
+				     &target->info.bcr);
 	if (ret) {
 		LOG_ERR("Failed to get bcr");
 	}
 
 	ret = i3c_master_request_ibi(target, &i3c_ibi_def_callbacks);
 	if (ret != 0) {
-		LOG_ERR("Failed to request SIR, bus = %x, addr = %u",msg->target_addr, msg->bus);
+		LOG_ERR("Failed to request SIR, bus = %x, addr = %u", msg->target_addr, msg->bus);
 	}
 
 	ret = i3c_master_enable_ibi(target);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable SIR, bus = %x, addr = %u",msg->target_addr, msg->bus);
+		LOG_ERR("Failed to enable SIR, bus = %x, addr = %u", msg->target_addr, msg->bus);
 	}
 
 	return -ret;
@@ -561,10 +582,10 @@ int i3c_controller_ibi_read(I3C_MSG *msg)
 		k_yield();
 		ret = i3c_master_priv_xfer(target, &xfer, 1);
 		if (ret) {
- 			LOG_ERR("ibi read failed. ret = %d", ret);
+			LOG_ERR("ibi read failed. ret = %d", ret);
 		}
 		msg->rx_len = xfer.len;
-		memcpy (msg->data, i3c_ibi_dev_table[idx].data_rx, IBI_PAYLOAD_SIZE);
+		memcpy(msg->data, i3c_ibi_dev_table[idx].data_rx, IBI_PAYLOAD_SIZE);
 	}
 
 	return msg->rx_len;

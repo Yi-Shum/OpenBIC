@@ -28,12 +28,18 @@ enum BUTTON_OPTIONAL {
 
 typedef struct _add_sel_info {
 	bool is_init;
+	int delay_ms;
 	uint8_t gpio_num;
 	uint8_t device_type;
 	uint8_t board_info;
 	uint8_t event_type;
 	struct k_work_delayable add_sel_work;
 } add_sel_info;
+
+typedef struct _accl_power_fault_info {
+	uint8_t check_bit;
+	uint8_t power_fault_state;
+} accl_power_fault_info;
 
 void ISR_FIO_BUTTON();
 void ISR_POWER_STATUS_CHANGE();

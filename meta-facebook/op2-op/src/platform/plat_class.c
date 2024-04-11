@@ -133,7 +133,7 @@ int check_pcie_retimer_type(void)
 
 void cache_pcie_retimer_version(void)
 {
-	check_pcie_retimer_type();
+	uint8_t retimer_type = get_pcie_retimer_type();
 	I2C_MSG *i2c_msg = NULL;
 	i2c_msg = malloc(sizeof(I2C_MSG));
 	i2c_msg->bus = I2C_BUS4;
@@ -141,23 +141,25 @@ void cache_pcie_retimer_version(void)
 	uint8_t data[RETIMER_VERSION_MAX_LENGTH];
 	memset(data, 0, RETIMER_VERSION_MAX_LENGTH);
 
-	switch (pcie_retimer_type) {
-		case RETIMER_TYPE_PT5161L:
-			if (get_retimer_fw_version(i2c_msg, data)) {
-				convert_uint8_t_pointer_to_uint32_t(&pcie_retimer_version, data, 4, BIG_ENDIAN);
-			} else {
-				LOG_ERR("PCIE RETIMER get version fail");
-			}
-			break;
-		case RETIMER_TYPE_M88RT51632:
-			if (!m88rt51632_get_fw_version(i2c_msg, &pcie_retimer_version)) {
-				LOG_ERR("PCIE RETIMER get version fail");
-			}
-			break;
-		default:
-			LOG_ERR("Unknown PCIE RETIMER");
-			break;
+	switch (retimer_type) {
+	case RETIMER_TYPE_PT5161L:
+		if (get_retimer_fw_version(i2c_msg, data)) {
+			convert_uint8_t_pointer_to_uint32_t(&pcie_retimer_version, data, 4,
+							    BIG_ENDIAN);
+		} else {
+			LOG_ERR("PCIE RETIMER get version fail");
+		}
+		break;
+	case RETIMER_TYPE_M88RT51632:
+		if (!m88rt51632_get_fw_version(i2c_msg, &pcie_retimer_version)) {
+			LOG_ERR("PCIE RETIMER get version fail");
+		}
+		break;
+	default:
+		LOG_ERR("Unknown PCIE RETIMER");
+		break;
 	}
+	SAFE_FREE(i2c_msg);
 }
 
 void init_board_revision(void)
@@ -175,7 +177,8 @@ void init_board_revision(void)
 
 void init_i3c_hub_type(void)
 {
-	if (rg3mxxb12_get_device_info(I2C_BUS2, &i3c_hub_type) && (i3c_hub_type == RG3M87B12_DEVICE_INFO)) {
+	if (rg3mxxb12_get_device_info(I2C_BUS2, &i3c_hub_type) &&
+	    (i3c_hub_type == RG3M87B12_DEVICE_INFO)) {
 		LOG_INF("I3C hub type: rg3mxxb12");
 	} else if (p3h284x_get_device_info(I2C_BUS2, &i3c_hub_type)) {
 		LOG_INF("I3C hub type: p3h284x");

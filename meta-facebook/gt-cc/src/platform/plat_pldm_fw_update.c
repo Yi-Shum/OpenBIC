@@ -64,6 +64,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_SELF,
 		.self_act_func = pldm_bic_activate,
 		.get_fw_version_fn = NULL,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
 	},
 	{
 		.enable = true,
@@ -77,6 +79,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_AC_PWR_CYCLE,
 		.self_act_func = NULL,
 		.get_fw_version_fn = get_vr_fw_version,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
 	},
 	{
 		.enable = true,
@@ -90,6 +94,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_AC_PWR_CYCLE,
 		.self_act_func = NULL,
 		.get_fw_version_fn = get_vr_fw_version,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
 	},
 	{
 		.enable = true,
@@ -103,6 +109,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_DC_PWR_CYCLE,
 		.self_act_func = NULL,
 		.get_fw_version_fn = get_pex_fw_version,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
 	},
 	{
 		.enable = true,
@@ -116,6 +124,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_DC_PWR_CYCLE,
 		.self_act_func = NULL,
 		.get_fw_version_fn = get_pex_fw_version,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
 	},
 	{
 		.enable = true,
@@ -129,6 +139,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_DC_PWR_CYCLE,
 		.self_act_func = NULL,
 		.get_fw_version_fn = get_pex_fw_version,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
 	},
 	{
 		.enable = true,
@@ -142,6 +154,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_DC_PWR_CYCLE,
 		.self_act_func = NULL,
 		.get_fw_version_fn = get_pex_fw_version,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
 	},
 	{
 		.enable = true,
@@ -155,6 +169,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_AC_PWR_CYCLE,
 		.self_act_func = NULL,
 		.get_fw_version_fn = get_fpga_user_code,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
 	},
 };
 
@@ -424,7 +440,7 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 
 	bool ret = false;
 	uint8_t sensor_num = ((p->comp_identifier == GT_COMPNT_VR0) ? SENSOR_NUM_PEX_0_VR_TEMP :
-									    SENSOR_NUM_PEX_2_VR_TEMP);
+								      SENSOR_NUM_PEX_2_VR_TEMP);
 	sensor_cfg *cfg = &sensor_config[sensor_config_index_map[sensor_num]];
 
 	if (!cfg) {

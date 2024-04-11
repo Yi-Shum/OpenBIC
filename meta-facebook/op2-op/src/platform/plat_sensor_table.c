@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(plat_sensor);
 
 bool e1s_access(uint8_t sensor_num);
 bool retimer_access(uint8_t sensor_num);
+bool edge_access(uint8_t sensor_num);
 
 sensor_cfg plat_sensor_config[] = {
 	/*  number,
@@ -55,19 +56,19 @@ sensor_cfg plat_sensor_config[] = {
 
 	//INA233 VOL
 	{ SENSOR_NUM_1OU_P12V_EDGE_VOLT, sensor_dev_ina233, I2C_BUS3, INA233_EXPA_MAIN_ADDR,
-	  INA233_VOLT_OFFSET, dc_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  INA233_VOLT_OFFSET, edge_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &ina233_init_args[5] },
 
 	//INA233 CURR
 	{ SENSOR_NUM_1OU_P12V_EDGE_CURR, sensor_dev_ina233, I2C_BUS3, INA233_EXPA_MAIN_ADDR,
-	  INA233_CURR_OFFSET, dc_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  INA233_CURR_OFFSET, edge_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &ina233_init_args[5] },
 
 	//INA233 PWR
 	{ SENSOR_NUM_1OU_P12V_EDGE_PWR, sensor_dev_ina233, I2C_BUS3, INA233_EXPA_MAIN_ADDR,
-	  INA233_PWR_OFFSET, dc_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  INA233_PWR_OFFSET, edge_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &ina233_init_args[5] },
 };
@@ -325,13 +326,14 @@ sensor_cfg plat_expansion_B_sensor_config[] = {
 };
 
 const int SENSOR_CONFIG_SIZE = ARRAY_SIZE(plat_sensor_config);
-const static uint8_t ina233_addr_opa[] = {INA233_EXPA_E1S_0_ADDR, INA233_EXPA_E1S_1_ADDR,
-	INA233_EXPA_E1S_2_ADDR};
-const static uint8_t ina233_addr_opb[] = {INA233_EXPB_E1S_0_ADDR, INA233_EXPB_E1S_1_ADDR,
-	INA233_EXPB_E1S_2_ADDR, INA233_EXPB_E1S_3_ADDR, INA233_EXPB_E1S_4_ADDR};
-const static uint8_t e1s_adc_channel_opa[] = {ADC_PORT2, ADC_PORT1, ADC_PORT0};
-const static uint8_t e1s_adc_channel_opb[] = {ADC_PORT4, ADC_PORT3, ADC_PORT2,
-	ADC_PORT1, ADC_PORT0};
+const static uint8_t ina233_addr_opa[] = { INA233_EXPA_E1S_0_ADDR, INA233_EXPA_E1S_1_ADDR,
+					   INA233_EXPA_E1S_2_ADDR };
+const static uint8_t ina233_addr_opb[] = { INA233_EXPB_E1S_0_ADDR, INA233_EXPB_E1S_1_ADDR,
+					   INA233_EXPB_E1S_2_ADDR, INA233_EXPB_E1S_3_ADDR,
+					   INA233_EXPB_E1S_4_ADDR };
+const static uint8_t e1s_adc_channel_opa[] = { ADC_PORT2, ADC_PORT1, ADC_PORT0 };
+const static uint8_t e1s_adc_channel_opb[] = { ADC_PORT4, ADC_PORT3, ADC_PORT2, ADC_PORT1,
+					       ADC_PORT0 };
 
 void load_sensor_config(void)
 {
@@ -524,8 +526,10 @@ void pal_extend_sensor_config()
 	uint8_t sensor_number_p1v8_adc = SENSOR_NUM_1OU_P1V8_ADC_VOLT;
 	uint8_t sensor_number_p1v2_adc = SENSOR_NUM_1OU_P1V2_ADC_VOLT;
 	if (card_position == CARD_POSITION_3OU) {
-		sensor_number_p1v8_adc += ((CARD_POSITION_3OU - CARD_POSITION_1OU) * SENSOR_NUMBER_INTERVAL);
-		sensor_number_p1v2_adc += ((CARD_POSITION_3OU - CARD_POSITION_1OU) * SENSOR_NUMBER_INTERVAL);
+		sensor_number_p1v8_adc +=
+			((CARD_POSITION_3OU - CARD_POSITION_1OU) * SENSOR_NUMBER_INTERVAL);
+		sensor_number_p1v2_adc +=
+			((CARD_POSITION_3OU - CARD_POSITION_1OU) * SENSOR_NUMBER_INTERVAL);
 	}
 
 	switch (card_type) {
@@ -630,5 +634,10 @@ bool e1s_access(uint8_t sensor_num)
 		LOG_ERR("Unsupported sensor device for e1s checking.");
 		break;
 	}
-	return get_e1s_present(e1s_index) && get_DC_on_delayed_status();
+	return get_e1s_present(e1s_index) && get_e1s_power_good(e1s_index);
+}
+
+bool edge_access(uint8_t sensor_num)
+{
+	return get_DC_on_delayed_status() && get_edge_power_good();
 }

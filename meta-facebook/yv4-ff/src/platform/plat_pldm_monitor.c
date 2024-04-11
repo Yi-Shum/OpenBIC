@@ -16,6 +16,7 @@
 
 #include <logging/log.h>
 #include <stdlib.h>
+#include <device.h>
 
 #include "sensor.h"
 #include "hal_gpio.h"
@@ -37,12 +38,39 @@ struct pldm_state_effecter_info plat_state_effecter_table[] = {
 		.entity_type = PLDM_ENTITY_OTHER_BUS,
 		.effecter_id = PLAT_PLDM_EFFECTER_ID_UART_SWITCH,
 	},
+
+	[PLDM_PLATFORM_OEM_AST1030_GPIO_PIN_NUM_MAX + 2] = {
+		.entity_type = PLDM_ENTITY_DEVICE_DRIVER,
+		.effecter_id = PLAT_PLDM_EFFECTER_ID_SPI_REINIT,
+	},
 };
 
 void plat_pldm_load_state_effecter_table(void)
 {
 	memcpy(state_effecter_table, plat_state_effecter_table, sizeof(plat_state_effecter_table));
 	return;
+}
+
+void plat_pldm_dev_driver_handler(const uint8_t *buf, uint16_t len, uint8_t *resp,
+				  uint16_t *resp_len, uint16_t effecter_id)
+{
+	CHECK_NULL_ARG(buf);
+	CHECK_NULL_ARG(resp);
+	CHECK_NULL_ARG(resp_len);
+
+	uint8_t *completion_code_p = resp;
+
+	switch (effecter_id) {
+	case PLAT_PLDM_EFFECTER_ID_SPI_REINIT:
+		pldm_spi_reinit("spi1_cs0", buf, len, resp, resp_len);
+		break;
+	default:
+		LOG_ERR("Unsupport effecter id, (0x%x)", effecter_id);
+		*completion_code_p = PLDM_ERROR_INVALID_DATA;
+		*resp_len = 1;
+		return;
+		break;
+	}
 }
 
 void plat_pldm_switch_uart(const uint8_t *buf, uint16_t len, uint8_t *resp, uint16_t *resp_len)
@@ -84,13 +112,22 @@ void plat_pldm_switch_uart(const uint8_t *buf, uint16_t len, uint8_t *resp, uint
 	clear_bits(&hicra_val, 0, 2);
 
 	switch (uart_number) {
-	case UART_VISTARA:
+	case UART1:
 		// IO1 to IO5: Ｗrite 0101b to bit[11:8]
 		hicr9_val = SETBITS(hicr9_val, 0b0101, 8);
 		sys_write32(hicr9_val, LPC_HICR9_REG);
 
 		// IO5 to IO1: Write 111b to bit[2:0]
 		hicra_val = SETBITS(hicra_val, 0b111, 0);
+		sys_write32(hicra_val, LPC_HICRA_REG);
+		break;
+	case UART2:
+		// IO5 to IO2: Write 0110b to bit[11:8]
+		hicr9_val = SETBITS(hicr9_val, 0b0110, 8);
+		sys_write32(hicr9_val, LPC_HICR9_REG);
+
+		// IO2 to IO5: Write 111b to bit[5:3]
+		hicra_val = SETBITS(hicra_val, 0b111, 3);
 		sys_write32(hicra_val, LPC_HICRA_REG);
 		break;
 	case UART_BIC:
@@ -128,6 +165,9 @@ uint8_t plat_pldm_set_state_effecter_state_handler(const uint8_t *buf, uint16_t 
 		break;
 	case PLDM_ENTITY_OTHER_BUS:
 		plat_pldm_switch_uart(buf, len, resp, resp_len);
+		break;
+	case PLDM_ENTITY_DEVICE_DRIVER:
+		plat_pldm_dev_driver_handler(buf, len, resp, resp_len, info_p->effecter_id);
 		break;
 	default:
 		LOG_ERR("Unsupport entity type, (%d)", info_p->entity_type);

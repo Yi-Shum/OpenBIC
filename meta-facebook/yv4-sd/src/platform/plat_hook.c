@@ -21,6 +21,9 @@
 #include "plat_apml.h"
 #include "plat_hook.h"
 #include "plat_gpio.h"
+#include "plat_dimm.h"
+
+#define RETIMER_INIT_RETRY_COUNT 3
 
 LOG_MODULE_REGISTER(plat_hook);
 
@@ -69,7 +72,32 @@ ina233_init_arg ina233_init_args[] = {
 		.is_need_mfr_device_config_init = false,
 		.is_need_set_alert_threshold = false,
 	},
+	[2] = {
+		.is_init = false,
+		.current_lsb = 0.001,
+		.r_shunt = 0.002,
+		.mfr_config_init = false,
+		.is_need_mfr_device_config_init = false,
+		.is_need_set_alert_threshold = false,
+	},
+	[3] = {
+		.is_init = false,
+		.current_lsb = 0.001,
+		.r_shunt = 0.002,
+		.mfr_config_init = false,
+		.is_need_mfr_device_config_init = false,
+		.is_need_set_alert_threshold = false,
+	},
 };
+
+pt5161l_init_arg pt5161l_init_args[] = { [0] = { .is_init = false,
+						 .temp_cal_code_pma_a = { 0, 0, 0, 0 },
+						 .temp_cal_code_pma_b = { 0, 0, 0, 0 },
+						 .temp_cal_code_avg = 0 },
+					 [1] = { .is_init = false,
+						 .temp_cal_code_pma_a = { 0, 0, 0, 0 },
+						 .temp_cal_code_pma_b = { 0, 0, 0, 0 },
+						 .temp_cal_code_avg = 0 } };
 
 bool pre_vr_read(sensor_cfg *cfg, void *args)
 {
@@ -119,7 +147,23 @@ bool post_amd_tsi_read(sensor_cfg *cfg, void *args, int *const reading)
 	}
 
 	// TODO: if throttle send event to BMC
+	return true;
+}
 
+bool pre_dimm_i3c_read(sensor_cfg *cfg, void *args)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	ARG_UNUSED(args);
+
+	if (!get_post_status()) {
+		return true;
+	}
+
+	uint8_t dimm_id = sensor_num_map_dimm_id(cfg->num);
+	if (get_dimm_present(dimm_id) ==
+	    DIMM_NOT_PRSNT) { // Stop monitoring DIMM when it is not present.
+		return false;
+	}
 	return true;
 }
 
@@ -140,4 +184,27 @@ bool post_p3v_bat_read(sensor_cfg *cfg, void *args, int *const reading)
 		return false;
 	}
 	return true;
+}
+
+bool pre_retimer_read(sensor_cfg *cfg, void *args)
+{
+	pt5161l_init_arg *init_arg = (pt5161l_init_arg *)cfg->init_args;
+	static uint8_t check_init_count = 0;
+	bool ret = true;
+
+	if (init_arg->is_init == false) {
+		if (check_init_count >= RETIMER_INIT_RETRY_COUNT) {
+			LOG_ERR("retimer initial fail reach max retry");
+			return false;
+		}
+
+		check_init_count += 1;
+		ret = init_drive_type_delayed(cfg);
+		if (ret == false) {
+			LOG_ERR("retimer initial fail");
+			return ret;
+		}
+	}
+
+	return ret;
 }
