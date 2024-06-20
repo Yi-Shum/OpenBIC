@@ -1,0 +1,6 @@
+<map id="set_clock_buffer_bypass_mode" name="set_clock_buffer_bypass_mode">
+<area shape="rect" id="node1" title=" " alt="" coords="5,31,209,57"/>
+<area shape="rect" id="node2" href="$op2-op_2src_2platform_2plat__class_8c.html#aca87bd14572547091155c9d37bd79eec" title=" " alt="" coords="267,5,369,32"/>
+<area shape="rect" id="node3" href="$hal__i2c_8c.html#a044cf163a5942b056d4a4feb0c056e9e" title=" " alt="" coords="257,56,379,83"/>
+<area shape="rect" id="node4" href="$hal__i2c_8c.html#abe0116512c803f4b7188c17345eb998f" title=" " alt="" coords="427,56,569,83"/>
+</map>

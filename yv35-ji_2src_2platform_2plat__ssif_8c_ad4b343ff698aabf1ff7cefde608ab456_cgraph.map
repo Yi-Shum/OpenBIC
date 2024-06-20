@@ -1,0 +1,9 @@
+<map id="pal_bios_post_complete" name="pal_bios_post_complete">
+<area shape="rect" id="node1" title=" " alt="" coords="5,56,168,83"/>
+<area shape="rect" id="node2" href="$at-cb_2src_2platform_2plat__class_8c.html#a177b22525ca1657da5ced816317de219" title=" " alt="" coords="395,5,525,32"/>
+<area shape="rect" id="node3" href="$hal__gpio_8c.html#ab1b576cbfd9eddaaf57a5aa5fc383dd1" title=" " alt="" coords="246,31,317,57"/>
+<area shape="rect" id="node4" href="$yv35-ji_2src_2platform_2plat__sensor__table_8c.html#a0ea9b42435dbceea95a101c2ac5e248f" title=" " alt="" coords="216,81,347,108"/>
+<area shape="rect" id="node7" href="$power__status_8c.html#a5c720d5b5d86ee340c47fc98d750e4e2" title=" " alt="" coords="224,132,339,159"/>
+<area shape="rect" id="node5" href="$hal__i2c_8c.html#a044cf163a5942b056d4a4feb0c056e9e" title=" " alt="" coords="399,81,521,108"/>
+<area shape="rect" id="node6" href="$hal__i2c_8c.html#abe0116512c803f4b7188c17345eb998f" title=" " alt="" coords="573,81,716,108"/>
+</map>

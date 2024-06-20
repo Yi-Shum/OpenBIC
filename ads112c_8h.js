@@ -1,0 +1,45 @@
+var ads112c_8h =
+[
+    [ "_ads112c_init_arg", "struct__ads112c__init__arg.html", "struct__ads112c__init__arg" ],
+    [ "CFG_REG_OFFSET0", "ads112c_8h.html#aa31b65bd9d377e86c0d5829c09934a89", null ],
+    [ "CFG_REG_OFFSET1", "ads112c_8h.html#a56c099db80513cf66f92c39de0e0fd92", null ],
+    [ "CFG_REG_OFFSET2", "ads112c_8h.html#a6cb351b247cd3f9a2528c679e0d92ee8", null ],
+    [ "CFG_REG_OFFSET3", "ads112c_8h.html#a37210632d3b76c4b43ce101bf85ba081", null ],
+    [ "CMD_POWERDOWN", "ads112c_8h.html#adf7738b42f43fb9c63828dd4ffca1afc", null ],
+    [ "CMD_RDATA", "ads112c_8h.html#a684cdcc5c9603e03eca3ed13958b4852", null ],
+    [ "CMD_RESET", "ads112c_8h.html#afe1dd8546b0a8cd30b19a0229205c8df", null ],
+    [ "CMD_RREG", "ads112c_8h.html#a720800b6c052333cd3773020595f0d79", null ],
+    [ "CMD_START_SYNC", "ads112c_8h.html#a6aeea6a4e86f758440fab788e312ed29", null ],
+    [ "CMD_WREG", "ads112c_8h.html#aa847ae5cbbfdc4ba30081fe3d3fa3cea", null ],
+    [ "ads112c_init_arg", "ads112c_8h.html#a359ae36d7fb01daf73e8fc7264477822", null ],
+    [ "ADS112C_REG0_CONFIG", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bd", [
+      [ "ADS112C_REG0_INPUT_AIN0AIN1", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda7537052f7b58427bb9ea7e1102967293", null ],
+      [ "ADS112C_REG0_INPUT_AIN0AIN2", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda9c3830fa07bd5cffd8181cc8a2501ef7", null ],
+      [ "ADS112C_REG0_INPUT_AIN0AIN3", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bdadfeea78ffb8f167c3a0d5abe10cad4f4", null ],
+      [ "ADS112C_REG0_INPUT_AIN1AIN0", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bdacbd1fe6a6280d6a25968b742bc429860", null ],
+      [ "ADS112C_REG0_INPUT_AIN1AIN2", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda5c905dde0ecbde455477b6e93c09550e", null ],
+      [ "ADS112C_REG0_INPUT_AIN1AIN3", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda380165912c69f4d28959a74695fe5a5c", null ],
+      [ "ADS112C_REG0_INPUT_AIN2AIN3", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bdaf79dacc0668e9f3f5cf25691da49f486", null ],
+      [ "ADS112C_REG0_INPUT_AIN3AIN2", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda13fb0bc729bce5cdd45d4b61465b2472", null ],
+      [ "ADS112C_REG0_INPUT_AIN0AVSS", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda3fd9c57e02fa3aa4d00a929a6e63560e", null ],
+      [ "ADS112C_REG0_INPUT_AIN1AVSS", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda37498e944b88411608f0e9826b9b6654", null ],
+      [ "ADS112C_REG0_INPUT_AIN2AVSS", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bdad9798b2986ddaffc276aabfd6ad6276e", null ],
+      [ "ADS112C_REG0_INPUT_AIN3AVSS", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda4c4c96d23a9ac896bde27406184e7efe", null ],
+      [ "ADS112C_REG0_GAIN1", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda2c03bf1febb776694525dfe7924ee38c", null ],
+      [ "ADS112C_REG0_GAIN2", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda3cc91691afc2aa76ccbd81b9f4de117b", null ],
+      [ "ADS112C_REG0_GAIN4", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bdaeb85c82ed17a9c5d57b8d367549590c2", null ],
+      [ "ADS112C_REG0_GAIN8", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda5727d02024a870036156ead2de112abd", null ],
+      [ "ADS112C_REG0_GAIN16", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bdae7a5f2ffafbeedadbddb34fcf01065aa", null ],
+      [ "ADS112C_REG0_GAIN32", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda993398c47930e8a259703ab3ebdec12a", null ],
+      [ "ADS112C_REG0_GAIN64", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda067fbe4c9b5ee214fc102cd8996ef998", null ],
+      [ "ADS112C_REG0_GAIN128", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bdaf55ecbd8d8ce5633a9f29e90a354c328", null ],
+      [ "ADS112C_REG0_PGA_ENABLE", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bdae3323b2a8e020239bf55ed1febdfb967", null ],
+      [ "ADS112C_REG0_PGA_DISABLE", "ads112c_8h.html#acdfe65ecaa2357cca4ed38acac7f32bda43b1cdc279e42f7dd404ad75afcea860", null ]
+    ] ],
+    [ "ADS112C_REG1_CONFIG", "ads112c_8h.html#acef8b6dfd47b81bdf2962abfbf2d0ea3", [
+      [ "ADS112C_REG1_SINGLEMODE", "ads112c_8h.html#acef8b6dfd47b81bdf2962abfbf2d0ea3a1caa2f9aeface2852ec8e4dc8756fd5c", null ],
+      [ "ADS112C_REG1_CONTINUEMODE", "ads112c_8h.html#acef8b6dfd47b81bdf2962abfbf2d0ea3a086b754d648b5e5f468b425842df93d9", null ],
+      [ "ADS112C_REG1_INTERNALV", "ads112c_8h.html#acef8b6dfd47b81bdf2962abfbf2d0ea3a45bb2c2487a21d244a6e061c93090697", null ],
+      [ "ADS112C_REG1_EXTERNALV", "ads112c_8h.html#acef8b6dfd47b81bdf2962abfbf2d0ea3a900a344191714bd5e73e2cab775ad5b2", null ]
+    ] ]
+];

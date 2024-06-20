@@ -1,0 +1,27 @@
+var aalc_rpu_2src_2platform_2plat__hook_8c =
+[
+    [ "get_i2c_mux_mutex", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a030290ba9bdfb95ddad14883664cf46a", null ],
+    [ "LOG_MODULE_REGISTER", "aalc-rpu_2src_2platform_2plat__hook_8c.html#ab66af7b9c00b5d0bfa716dd0aa5ea2c5", null ],
+    [ "post_adm1272_read", "aalc-rpu_2src_2platform_2plat__hook_8c.html#af9b8fe16346bef9897e331b160628423", null ],
+    [ "post_ads112c_read", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a4b9f85fb23209e5fecd32c88f5fe36fa", null ],
+    [ "post_PCA9546A_read", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a53e0e4851d2e8c312a4e58efdffb52b5", null ],
+    [ "pre_PCA9546A_read", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a332648030bbf2cafa2dd1d7ca74fd5f5", null ],
+    [ "adc_asd_init_args", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a647016b422bcbb2a37bc4a58ed550217", null ],
+    [ "adm1272_init_args", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a1a975cb6afa2f86555945ac3128c32cf", null ],
+    [ "ads112c_init_args", "aalc-rpu_2src_2platform_2plat__hook_8c.html#aeb1db42f3854c02dedb06fa6b89bc3ec", null ],
+    [ "bus_1_PCA9546A_configs", "aalc-rpu_2src_2platform_2plat__hook_8c.html#abf6b086fe7a65c3aeca10a10c695ac15", null ],
+    [ "bus_2_PCA9546A_configs", "aalc-rpu_2src_2platform_2plat__hook_8c.html#aa5c5dbbe0c8dd2dfb839fd6f9d665484", null ],
+    [ "bus_6_PCA9546A_configs", "aalc-rpu_2src_2platform_2plat__hook_8c.html#ac49030d15c5899b8b30cb8f5dae9d9fc", null ],
+    [ "bus_7_PCA9546A_configs", "aalc-rpu_2src_2platform_2plat__hook_8c.html#ad40f7affebed92b6bac0a6c94e3c5a64", null ],
+    [ "bus_8_PCA9546A_configs", "aalc-rpu_2src_2platform_2plat__hook_8c.html#ad40aae3365d50e50862001801297c214", null ],
+    [ "bus_9_PCA9546A_configs", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a63e018087c92e06dd34f675e0be9cb7b", null ],
+    [ "i2c_1_PCA9546a_mutex", "aalc-rpu_2src_2platform_2plat__hook_8c.html#aecdb5e4958ffaa2b24ae7fec8e269cc8", null ],
+    [ "i2c_2_PCA9546a_mutex", "aalc-rpu_2src_2platform_2plat__hook_8c.html#aef579df542f78cc9ac82e9198bcf57f6", null ],
+    [ "i2c_6_pca9546a_mutex", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a194bd17cb57e08cb403342079a12c582", null ],
+    [ "i2c_7_PCA9546a_mutex", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a89e4296875b2df66873c38442b582541", null ],
+    [ "i2c_8_PCA9546a_mutex", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a3b5e0ec6f8368d00bbdc28ad2abc103b", null ],
+    [ "i2c_9_PCA9546a_mutex", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a75e71cb92bc24032c49ef02e4778f470", null ],
+    [ "ina238_init_args", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a3bf3603937364058b4868223b1cf9ca3", null ],
+    [ "nct214_init_args", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a82e1d0a900109e986647425e849ae8d3", null ],
+    [ "nct7363_init_args", "aalc-rpu_2src_2platform_2plat__hook_8c.html#a188660f8c730b267176b78787b26e2d4", null ]
+];
